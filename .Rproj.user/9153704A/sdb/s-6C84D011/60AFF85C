@@ -1,0 +1,17 @@
+{
+    "contents" : "#Set data path\ndataPath <- \"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2\"\nfileName <- \"StormData.csv.bz2\"\n#Download the file\ndownload.file(url = dataPath, destfile = fileName, method = \"auto\")\n\n#Extract bz2 file to a dataframe\ndataInitial <- read.csv(bzfile(fileName))\n\n\nlibrary(dplyr)\n\nlibrary(lubridate)\n\n#Transform date\ndataInitial$date <- as.Date(dataInitial$BGN_DATE, format = \"%m/%d/%Y\")\nhead(dataInitial)\ndataInitial$year <- year(dataInitial$date)\nsummary(dataInitial$year>=1996)\nsum(!dataInitial$year>=1996)/nrow(dataInitial)\n\n#Filter by year\ndataYearProcessed <- dataInitial[dataInitial$year>=1996,]\n\ndataStatesProcessed <- dataYearProcessed[dataYearProcessed$STATE %in% state.abb,]\n\nsummary(dataYearProcessed$STATE %in% state.abb)\npercentDataRemStates <- sum(!dataYearProcessed$STATE %in% state.abb)/nrow(dataYearProcessed)\n\nsummary(dataStatesProcessed$EVENT)\n\ndataStatesProcessed %>% \n        select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) -> dataPreprocess\n\ndataAgregateFatalities <- with(dataPreprocess, aggregate(FATALITIES, list(EVTYPE), sum))\ndataAgregateFatalities <- rename(dataAgregateFatalities, EVTYPE = Group.1, FATALITIES = x)\nplot(arrange(dataAgregateFatalities,desc(FATALITIES))[1:20,], type=\"hist\")\n\n\ndataAgregateINJURIES <- with(dataPreprocess, aggregate(INJURIES, list(EVTYPE), sum))\ndataAgregateINJURIES <- rename(dataAgregateINJURIES, EVTYPE = Group.1, INJURIES = x)\narrange(dataAgregateINJURIES, desc(INJURIES))[1:20,]\n\n\n\n\n\ndataGrouped %>% \n        mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, \n                                    ifelse(PROPDMGEXP == 'M', 10^6, \n                                           ifelse(PROPDMGEXP == 'K', 10^3, \n                                                  ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%\n        mutate(totalPROPDMG = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataTreated\n\n\n\nsummary(dataInitial$EVTYPE)\nsummary(dataInitial$PROPDMG)\nsummary(dataInitial$PROPDMGEXP)\n\n\nsummary(dataGrouped)\n\n#FATALITIES INJURIES\n#PROPDMG PROPDMGEXP CROPDMG CROPDMGEXP",
+    "created" : 1434371283864.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3918582786",
+    "id" : "60AFF85C",
+    "lastKnownWriteTime" : 1434435638,
+    "path" : "D:/Privado/repos/5.ReproducibleResearch/PeerAssessment2/PA2Code.R",
+    "project_path" : "PA2Code.R",
+    "properties" : {
+        "tempName" : "Untitled2"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}
