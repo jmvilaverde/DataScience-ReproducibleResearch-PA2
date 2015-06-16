@@ -2,7 +2,13 @@
 title: Data Science - Reproducible Research - Peer Assessment 2 - Analysis of Weather Event using NOAA Storm Database 
 author: "jmvilaverde"
 date: "Monday, June 15, 2015"
-output: html_document
+output:
+  html_document:
+    keep_md: yes
+    pandoc_args:
+    - +RTS
+    - -K64m
+    - -RTS
 ---
 
 
@@ -72,9 +78,10 @@ str(dataInitial)
 summary(dataInitial)
 ```
 
-```{r echo=TRUE}
+```{r filter, echo=TRUE}
 
 #Data filtered by year >= 1996
+library(lubridate)
 dataInitial$date <- as.Date(dataInitial$BGN_DATE, format = "%m/%d/%Y")
 dataInitial$year <- year(dataInitial$date)
 dataYearProcessed <- dataInitial[dataInitial$year>=1996,]
@@ -91,12 +98,13 @@ summary(dataYearProcessed$STATE %in% state.abb)
 percentDataRemStates <- sum(!dataYearProcessed$STATE %in% state.abb)/nrow(dataYearProcessed)
 
 summary(dataStatesProcessed)
+```
 
+```{r processFilterData, echo=TRUE}
 library(dplyr)
 
 #Select only necesary fields: Type of event, Number of fatalities, Number of injuries, Property damages, Property damages exponent,
 #Crop damages, and Crop damages exponent.
-#Group all by Type of event
 dataStatesProcessed %>% 
         select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) -> dataPreprocessed
         
@@ -104,26 +112,63 @@ dataStatesProcessed %>%
 #Evaluate how many levels have the dataset
 unique(dataPreprocessed$EVTYPE)
 
-#Remove Summary
-dataPreprocessed <- dataPreprocessed$EVTYPE[!grepl(pattern = "Summary", x=dataPreprocessed$EVTYPE)]
+#Remove Summary from event type
+dataPreprocessed <- dataPreprocessed[!grepl(pattern = "Summary", x=dataPreprocessed$EVTYPE),]
 
-#TOP 20 of Fatalities per Event Type
-dataAgregateFatalities <- with(dataPreprocess, aggregate(FATALITIES, list(EVTYPE), sum))
+#Create Property damage total
+#Type of exponents -> Billion, Million, K thousand
+summary(dataPreprocessed)
+dataPreprocessed %>%
+         mutate(CombinedHealthDamage = FATALITIES + INJURIES) -> dataPreprocessed 
+
+dataPreprocessed %>%
+         mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
+                                     ifelse(PROPDMGEXP == 'M', 10^6, 
+                                            ifelse(PROPDMGEXP == 'K', 10^3, 
+                                                   ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%
+         mutate(totalPROPDMG = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
+```
+
+```{r getFatalitiesAndInjuries, echo=TRUE}
+##TOP 20 of Fatalities per Event Type
+dataAgregateFatalities <- with(dataPreprocessed, aggregate(FATALITIES, list(EVTYPE), sum))
 dataAgregateFatalities <- rename(dataAgregateFatalities, EVTYPE = Group.1, FATALITIES = x)
-arrange(dataAgregateFatalities,desc(FATALITIES))[1:20,]
+dAFatalitiesTop20 <-arrange(dataAgregateFatalities,desc(FATALITIES))[1:20,]
 
 #TOP 20 of Injuries per Event Type
-dataAgregateINJURIES <- with(dataPreprocess, aggregate(INJURIES, list(EVTYPE), sum))
+dataAgregateINJURIES <- with(dataPreprocessed, aggregate(INJURIES, list(EVTYPE), sum))
 dataAgregateINJURIES <- rename(dataAgregateINJURIES, EVTYPE = Group.1, INJURIES = x)
-arrange(dataAgregateINJURIES, desc(INJURIES))[1:20,]
+dAINJURIESTop20 <- arrange(dataAgregateINJURIES, desc(INJURIES))[1:20,]
 
+#TOP 20 of Combined Health Damage per Event Type
+dataAgregateCombined <- with(dataPreprocessed, aggregate(CombinedHealthDamage, list(EVTYPE), sum))
+dataAgregateCombined <- rename(dataAgregateCombined, EVTYPE = Group.1, CombinedHealthDamage = x)
+dACOMBINEDTop20 <- arrange(dataAgregateCombined, desc(CombinedHealthDamage))[1:20,]
 
-#Transform Property damages exponent into numeric exponent and calculate total Property Damage Value:
-dataGrouped %>% 
-        mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, ifelse(PROPDMGEXP == 'M', 10^6, ifelse(PROPDMGEXP == 'K', 10^3, 1)))) %>%
-        mutate(totalPROPDMG = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) %>% 
-        head()
+#Change the factor order
+dAFatalitiesTop20$EVTYPE <- factor(dAFatalitiesTop20$EVTYPE, levels = dAFatalitiesTop20$EVTYPE[order(dAFatalitiesTop20$FATALITIES)])
+dAINJURIESTop20$EVTYPE <- factor(dAINJURIESTop20$EVTYPE, levels = dAINJURIESTop20$EVTYPE[order(dAINJURIESTop20$INJURIES)])
+dACOMBINEDTop20$EVTYPE <- factor(dACOMBINEDTop20$EVTYPE, levels = dACOMBINEDTop20$EVTYPE[order(dACOMBINEDTop20$CombinedHealthDamage)])
+```
 
+```{r plotFatalitiesAndInjuries, echo=TRUE}
+library(ggplot2)
+
+gf <- ggplot(data=dAFatalitiesTop20, aes(x=EVTYPE, y=FATALITIES , fill=EVTYPE))
+gf <- gf + geom_bar(stat="identity", show_guide = FALSE)
+gf <- gf + coord_flip() + geom_text(aes(label=FATALITIES), vjust=0)
+
+gi <- ggplot(data=dAINJURIESTop20, aes(x=EVTYPE, y=INJURIES , fill=EVTYPE))
+gi <- gi + geom_bar(stat="identity", show_guide = FALSE)
+gi <- gi + coord_flip() + geom_text(aes(label=INJURIES), vjust=0)
+
+gc <- ggplot(data=dACOMBINEDTop20, aes(x=EVTYPE, y=CombinedHealthDamage , fill=EVTYPE))
+gc <- gc + geom_bar(stat="identity", show_guide = FALSE)
+gc <- gc + coord_flip() + geom_text(aes(label=CombinedHealthDamage), vjust=0)
+
+require(gridExtra)
+ga <- grid.arrange(gf, gi, gc, nrow = 2, ncol=2)
+ga
 ```
 
 
