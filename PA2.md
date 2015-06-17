@@ -1,5 +1,5 @@
-# Data Science - Reproducible Research - Peer Assessment 2 - Analysis of Weather Event using NOAA Storm Database
-jmvilaverde  
+# Data Science - Reproducible Research - Peer Assessment 2 - Analysis of Weather Event in US and Harmful and Economic impact using NOAA Storm Database
+by jmvilaverde  
 Monday, June 15, 2015  
 
 
@@ -7,38 +7,24 @@ Monday, June 15, 2015
 
 ***
 
-##Title: Your document should have a title that briefly summarizes your data analysis
-
-#Analysis of Weather Event using NOAA Storm Database 
-
-* Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
-
-* Across the United States, which types of events have the greatest economic consequences?
-
-Consider writing your report as if it were to be read by a government or municipal manager who might be responsible for preparing for severe weather events and will need to prioritize resources for different types of events. However, there is no need to make any specific recommendations in your report.
-
-
 
 ##Synopsis: 
 
-Immediately after the title, there should be a synopsis which describes and summarizes your analysis in at most 10 complete sentences.
+Based on data extracted from NOAA Storm Database for event registered in US from year 1996 to present, and analyzed with the procedure described in next section _Data Processing_, are obtained the subsequent conclusions:
 
-1.
-2.
-3.
-4.
-5.
-6.
-7.
-8.
-9.
-10.
+Human harmful:
+* TOP 3 most harmful events are TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%) with a 59.2 % of total harmful of all events. 
+* TOP 10 is 86 % of total harmful a total of 56179 fatalities or people injured.
+
+Economic damages:
+* TOP 3 event types that causes most economic damages are TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%) with a 59.2 % of total harmful of all events. 
+* TOP 10 is 86 % of total economic damages 
+
+_Can view detail in section Results._
 
 ##Data Processing
 
-There should be a section titled Data Processing which describes (in words and code) how the data were loaded into R and processed for analysis. In particular, your analysis must start from the raw CSV file containing the data. You cannot do any preprocessing outside the document. If preprocessing is time-consuming you may consider using the cache = TRUE option for certain code chunks.
-
-First step, adquire the date from "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" and put into a data frame container:
+1. First step, adquire the date from [https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2] and put it into a data frame container:
 
 
 ```r
@@ -54,13 +40,14 @@ if (!file.exists(fileName)) download.file(url = dataPath, destfile = fileName)
 dataInitial <- read.csv(bzfile(fileName))
 ```
 
-As additional information, on [http://www.ncdc.noaa.gov/stormevents/details.jsp?type=eventtype]
-inform about information recolection, and only have a complete collection from 1996 to present:
-_3. All Event Types (48 from Directive 10-1605): From 1996 to present, 48 event types are recorded as defined in NWS Directive 10-1605._
+> As additional information, on http://www.ncdc.noaa.gov/stormevents/details.jsp?type=eventtype
+> inform about information recolection, and only have a complete collection from 1996 to present:
+> _3. All Event Types (48 from Directive 10-1605): From 1996 to present, 48 event types are recorded as defined in NWS Directive 10-1605._
 
+Because only have a complete collection from 1996 to present is taken as criteria to filter the data to keep only information from 1996 to present.
 
+2. Get only relevant fields:
 
-Get only relevant fields:
 
 ```r
 #Identify fields
@@ -78,300 +65,83 @@ names(dataInitial)
 ## [36] "REMARKS"    "REFNUM"
 ```
 
+For our process are needed: BGN_DATE, STATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP.
+
+Are relevant for filter Date (BGN_DATE) and States (STATE).
+
+3. Analyze BGN_DATE and STATE, in order to know what class have the data and how to process it: 
+
+
 ```r
 #Identify structure
-str(dataInitial)
+str(dataInitial$BGN_DATE)
 ```
 
 ```
-## 'data.frame':	902297 obs. of  37 variables:
-##  $ STATE__   : num  1 1 1 1 1 1 1 1 1 1 ...
-##  $ BGN_DATE  : Factor w/ 16335 levels "1/1/1966 0:00:00",..: 6523 6523 4242 11116 2224 2224 2260 383 3980 3980 ...
-##  $ BGN_TIME  : Factor w/ 3608 levels "00:00:00 AM",..: 272 287 2705 1683 2584 3186 242 1683 3186 3186 ...
-##  $ TIME_ZONE : Factor w/ 22 levels "ADT","AKS","AST",..: 7 7 7 7 7 7 7 7 7 7 ...
-##  $ COUNTY    : num  97 3 57 89 43 77 9 123 125 57 ...
-##  $ COUNTYNAME: Factor w/ 29601 levels "","5NM E OF MACKINAC BRIDGE TO PRESQUE ISLE LT MI",..: 13513 1873 4598 10592 4372 10094 1973 23873 24418 4598 ...
-##  $ STATE     : Factor w/ 72 levels "AK","AL","AM",..: 2 2 2 2 2 2 2 2 2 2 ...
-##  $ EVTYPE    : Factor w/ 985 levels "   HIGH SURF ADVISORY",..: 834 834 834 834 834 834 834 834 834 834 ...
-##  $ BGN_RANGE : num  0 0 0 0 0 0 0 0 0 0 ...
-##  $ BGN_AZI   : Factor w/ 35 levels "","  N"," NW",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ BGN_LOCATI: Factor w/ 54429 levels "","- 1 N Albion",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ END_DATE  : Factor w/ 6663 levels "","1/1/1993 0:00:00",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ END_TIME  : Factor w/ 3647 levels ""," 0900CST",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ COUNTY_END: num  0 0 0 0 0 0 0 0 0 0 ...
-##  $ COUNTYENDN: logi  NA NA NA NA NA NA ...
-##  $ END_RANGE : num  0 0 0 0 0 0 0 0 0 0 ...
-##  $ END_AZI   : Factor w/ 24 levels "","E","ENE","ESE",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ END_LOCATI: Factor w/ 34506 levels "","- .5 NNW",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ LENGTH    : num  14 2 0.1 0 0 1.5 1.5 0 3.3 2.3 ...
-##  $ WIDTH     : num  100 150 123 100 150 177 33 33 100 100 ...
-##  $ F         : int  3 2 2 2 2 2 2 1 3 3 ...
-##  $ MAG       : num  0 0 0 0 0 0 0 0 0 0 ...
-##  $ FATALITIES: num  0 0 0 0 0 0 0 0 1 0 ...
-##  $ INJURIES  : num  15 0 2 2 2 6 1 0 14 0 ...
-##  $ PROPDMG   : num  25 2.5 25 2.5 2.5 2.5 2.5 2.5 25 25 ...
-##  $ PROPDMGEXP: Factor w/ 19 levels "","-","?","+",..: 17 17 17 17 17 17 17 17 17 17 ...
-##  $ CROPDMG   : num  0 0 0 0 0 0 0 0 0 0 ...
-##  $ CROPDMGEXP: Factor w/ 9 levels "","?","0","2",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ WFO       : Factor w/ 542 levels ""," CI","$AC",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ STATEOFFIC: Factor w/ 250 levels "","ALABAMA, Central",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ ZONENAMES : Factor w/ 25112 levels "","                                                                                                                               "| __truncated__,..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ LATITUDE  : num  3040 3042 3340 3458 3412 ...
-##  $ LONGITUDE : num  8812 8755 8742 8626 8642 ...
-##  $ LATITUDE_E: num  3051 0 0 0 0 ...
-##  $ LONGITUDE_: num  8806 0 0 0 0 ...
-##  $ REMARKS   : Factor w/ 436781 levels "","-2 at Deer Park\n",..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ REFNUM    : num  1 2 3 4 5 6 7 8 9 10 ...
+##  Factor w/ 16335 levels "1/1/1966 0:00:00",..: 6523 6523 4242 11116 2224 2224 2260 383 3980 3980 ...
 ```
 
 ```r
-#Get a general overview
-summary(dataInitial)
+head(dataInitial$BGN_DATE)
 ```
 
 ```
-##     STATE__                  BGN_DATE             BGN_TIME     
-##  Min.   : 1.0   5/25/2011 0:00:00:  1202   12:00:00 AM: 10163  
-##  1st Qu.:19.0   4/27/2011 0:00:00:  1193   06:00:00 PM:  7350  
-##  Median :30.0   6/9/2011 0:00:00 :  1030   04:00:00 PM:  7261  
-##  Mean   :31.2   5/30/2004 0:00:00:  1016   05:00:00 PM:  6891  
-##  3rd Qu.:45.0   4/4/2011 0:00:00 :  1009   12:00:00 PM:  6703  
-##  Max.   :95.0   4/2/2006 0:00:00 :   981   03:00:00 PM:  6700  
-##                 (Other)          :895866   (Other)    :857229  
-##    TIME_ZONE          COUNTY           COUNTYNAME         STATE       
-##  CST    :547493   Min.   :  0.0   JEFFERSON :  7840   TX     : 83728  
-##  EST    :245558   1st Qu.: 31.0   WASHINGTON:  7603   KS     : 53440  
-##  MST    : 68390   Median : 75.0   JACKSON   :  6660   OK     : 46802  
-##  PST    : 28302   Mean   :100.6   FRANKLIN  :  6256   MO     : 35648  
-##  AST    :  6360   3rd Qu.:131.0   LINCOLN   :  5937   IA     : 31069  
-##  HST    :  2563   Max.   :873.0   MADISON   :  5632   NE     : 30271  
-##  (Other):  3631                   (Other)   :862369   (Other):621339  
-##                EVTYPE         BGN_RANGE           BGN_AZI      
-##  HAIL             :288661   Min.   :   0.000          :547332  
-##  TSTM WIND        :219940   1st Qu.:   0.000   N      : 86752  
-##  THUNDERSTORM WIND: 82563   Median :   0.000   W      : 38446  
-##  TORNADO          : 60652   Mean   :   1.484   S      : 37558  
-##  FLASH FLOOD      : 54277   3rd Qu.:   1.000   E      : 33178  
-##  FLOOD            : 25326   Max.   :3749.000   NW     : 24041  
-##  (Other)          :170878                      (Other):134990  
-##          BGN_LOCATI                  END_DATE             END_TIME     
-##               :287743                    :243411              :238978  
-##  COUNTYWIDE   : 19680   4/27/2011 0:00:00:  1214   06:00:00 PM:  9802  
-##  Countywide   :   993   5/25/2011 0:00:00:  1196   05:00:00 PM:  8314  
-##  SPRINGFIELD  :   843   6/9/2011 0:00:00 :  1021   04:00:00 PM:  8104  
-##  SOUTH PORTION:   810   4/4/2011 0:00:00 :  1007   12:00:00 PM:  7483  
-##  NORTH PORTION:   784   5/30/2004 0:00:00:   998   11:59:00 PM:  7184  
-##  (Other)      :591444   (Other)          :653450   (Other)    :622432  
-##    COUNTY_END COUNTYENDN       END_RANGE           END_AZI      
-##  Min.   :0    Mode:logical   Min.   :  0.0000          :724837  
-##  1st Qu.:0    NA's:902297    1st Qu.:  0.0000   N      : 28082  
-##  Median :0                   Median :  0.0000   S      : 22510  
-##  Mean   :0                   Mean   :  0.9862   W      : 20119  
-##  3rd Qu.:0                   3rd Qu.:  0.0000   E      : 20047  
-##  Max.   :0                   Max.   :925.0000   NE     : 14606  
-##                                                 (Other): 72096  
-##            END_LOCATI         LENGTH              WIDTH         
-##                 :499225   Min.   :   0.0000   Min.   :   0.000  
-##  COUNTYWIDE     : 19731   1st Qu.:   0.0000   1st Qu.:   0.000  
-##  SOUTH PORTION  :   833   Median :   0.0000   Median :   0.000  
-##  NORTH PORTION  :   780   Mean   :   0.2301   Mean   :   7.503  
-##  CENTRAL PORTION:   617   3rd Qu.:   0.0000   3rd Qu.:   0.000  
-##  SPRINGFIELD    :   575   Max.   :2315.0000   Max.   :4400.000  
-##  (Other)        :380536                                         
-##        F               MAG            FATALITIES          INJURIES        
-##  Min.   :0.0      Min.   :    0.0   Min.   :  0.0000   Min.   :   0.0000  
-##  1st Qu.:0.0      1st Qu.:    0.0   1st Qu.:  0.0000   1st Qu.:   0.0000  
-##  Median :1.0      Median :   50.0   Median :  0.0000   Median :   0.0000  
-##  Mean   :0.9      Mean   :   46.9   Mean   :  0.0168   Mean   :   0.1557  
-##  3rd Qu.:1.0      3rd Qu.:   75.0   3rd Qu.:  0.0000   3rd Qu.:   0.0000  
-##  Max.   :5.0      Max.   :22000.0   Max.   :583.0000   Max.   :1700.0000  
-##  NA's   :843563                                                           
-##     PROPDMG          PROPDMGEXP        CROPDMG          CROPDMGEXP    
-##  Min.   :   0.00          :465934   Min.   :  0.000          :618413  
-##  1st Qu.:   0.00   K      :424665   1st Qu.:  0.000   K      :281832  
-##  Median :   0.00   M      : 11330   Median :  0.000   M      :  1994  
-##  Mean   :  12.06   0      :   216   Mean   :  1.527   k      :    21  
-##  3rd Qu.:   0.50   B      :    40   3rd Qu.:  0.000   0      :    19  
-##  Max.   :5000.00   5      :    28   Max.   :990.000   B      :     9  
-##                    (Other):    84                     (Other):     9  
-##       WFO                                       STATEOFFIC    
-##         :142069                                      :248769  
-##  OUN    : 17393   TEXAS, North                       : 12193  
-##  JAN    : 13889   ARKANSAS, Central and North Central: 11738  
-##  LWX    : 13174   IOWA, Central                      : 11345  
-##  PHI    : 12551   KANSAS, Southwest                  : 11212  
-##  TSA    : 12483   GEORGIA, North and Central         : 11120  
-##  (Other):690738   (Other)                            :595920  
-##                                                                                                                                                                                                     ZONENAMES     
-##                                                                                                                                                                                                          :594029  
-##                                                                                                                                                                                                          :205988  
-##  GREATER RENO / CARSON CITY / M - GREATER RENO / CARSON CITY / M                                                                                                                                         :   639  
-##  GREATER LAKE TAHOE AREA - GREATER LAKE TAHOE AREA                                                                                                                                                       :   592  
-##  JEFFERSON - JEFFERSON                                                                                                                                                                                   :   303  
-##  MADISON - MADISON                                                                                                                                                                                       :   302  
-##  (Other)                                                                                                                                                                                                 :100444  
-##     LATITUDE      LONGITUDE        LATITUDE_E     LONGITUDE_    
-##  Min.   :   0   Min.   :-14451   Min.   :   0   Min.   :-14455  
-##  1st Qu.:2802   1st Qu.:  7247   1st Qu.:   0   1st Qu.:     0  
-##  Median :3540   Median :  8707   Median :   0   Median :     0  
-##  Mean   :2875   Mean   :  6940   Mean   :1452   Mean   :  3509  
-##  3rd Qu.:4019   3rd Qu.:  9605   3rd Qu.:3549   3rd Qu.:  8735  
-##  Max.   :9706   Max.   : 17124   Max.   :9706   Max.   :106220  
-##  NA's   :47                      NA's   :40                     
-##                                            REMARKS           REFNUM      
-##                                                :287433   Min.   :     1  
-##                                                : 24013   1st Qu.:225575  
-##  Trees down.\n                                 :  1110   Median :451149  
-##  Several trees were blown down.\n              :   568   Mean   :451149  
-##  Trees were downed.\n                          :   446   3rd Qu.:676723  
-##  Large trees and power lines were blown down.\n:   432   Max.   :902297  
-##  (Other)                                       :588295
+## [1] 4/18/1950 0:00:00  4/18/1950 0:00:00  2/20/1951 0:00:00 
+## [4] 6/8/1951 0:00:00   11/15/1951 0:00:00 11/15/1951 0:00:00
+## 16335 Levels: 1/1/1966 0:00:00 1/1/1972 0:00:00 ... 9/9/2011 0:00:00
 ```
 
+```r
+str(dataInitial$STATE)
+```
+
+```
+##  Factor w/ 72 levels "AK","AL","AM",..: 2 2 2 2 2 2 2 2 2 2 ...
+```
+
+BGN_DATE and STATE are factors.
+
+4. We need to transform BGN_DATE from factor into a Date class in order to filter by year.
+
+
+```r
+#Use library lubridate to manage Date
+library(lubridate)
+
+#Transform BGN_DATE into a class  Date
+dataInitial$date <- as.Date(dataInitial$BGN_DATE, format = "%m/%d/%Y")
+class(dataInitial$date)
+```
+
+```
+## [1] "Date"
+```
 
 ```r
 #Data filtered by year >= 1996
-library(lubridate)
-dataInitial$date <- as.Date(dataInitial$BGN_DATE, format = "%m/%d/%Y")
-dataInitial$year <- year(dataInitial$date)
-dataYearProcessed <- dataInitial[dataInitial$year>=1996,]
+dataYearProcessed <- dataInitial[year(dataInitial$date)>=1996,]
 
 #Percent of data removed filtering by Year
-summary(dataInitial$year>=1996)
+percentDataRemYear <- round((1-(nrow(dataYearProcessed)/nrow(dataInitial))) * 100, 2)
 ```
 
-```
-##    Mode   FALSE    TRUE    NA's 
-## logical  248767  653530       0
-```
+This filter has removed 27.57% of data.
+
+5. Filter to get only data from US States:
+
 
 ```r
-percentDataRemYear <- sum(!dataInitial$year>=1996)/nrow(dataInitial)
-
 #Data filtered by States
 dataStatesProcessed <- dataYearProcessed[dataYearProcessed$STATE %in% state.abb,]
 
 #Percent of data removed filtering by State
-summary(dataYearProcessed$STATE %in% state.abb)
+percentDataRemStates <- round((1- (nrow(dataStatesProcessed)/nrow(dataYearProcessed)))*100, 2)
 ```
 
-```
-##    Mode   FALSE    TRUE    NA's 
-## logical   18704  634826       0
-```
+This filter has removed 2.86% of data from precedent filter.
 
-```r
-percentDataRemStates <- sum(!dataYearProcessed$STATE %in% state.abb)/nrow(dataYearProcessed)
 
-summary(dataStatesProcessed)
-```
-
-```
-##     STATE__                   BGN_DATE             BGN_TIME     
-##  Min.   : 1.00   5/25/2011 0:00:00:  1199   12:00:00 AM:  9982  
-##  1st Qu.:19.00   4/27/2011 0:00:00:  1182   06:00:00 PM:  7186  
-##  Median :29.00   5/30/2004 0:00:00:  1009   04:00:00 PM:  7018  
-##  Mean   :29.83   4/4/2011 0:00:00 :  1006   05:00:00 PM:  6696  
-##  3rd Qu.:42.00   4/2/2006 0:00:00 :   981   12:00:00 PM:  6521  
-##  Max.   :56.00   4/19/2011 0:00:00:   968   03:00:00 PM:  6469  
-##                  (Other)          :628481   (Other)    :590954  
-##    TIME_ZONE          COUNTY            COUNTYNAME         STATE       
-##  CST    :330406   Min.   :  1.00   WASHINGTON:  5311   TX     : 51335  
-##  EST    :213976   1st Qu.: 29.00   JEFFERSON :  5112   KS     : 38649  
-##  MST    : 63241   Median : 72.00   FRANKLIN  :  4374   OK     : 26980  
-##  PST    : 20722   Mean   : 92.66   JACKSON   :  4352   MO     : 25802  
-##  AST    :  2491   3rd Qu.:125.00   LINCOLN   :  4086   IA     : 22712  
-##  HST    :  2450   Max.   :840.00   MADISON   :  3929   IL     : 21215  
-##  (Other):  1540                    (Other)   :607662   (Other):448133  
-##                EVTYPE         BGN_RANGE          BGN_AZI      
-##  HAIL             :207684   Min.   :  0.000          :305836  
-##  TSTM WIND        :128568   1st Qu.:  0.000   N      : 81590  
-##  THUNDERSTORM WIND: 81316   Median :  0.000   W      : 35483  
-##  FLASH FLOOD      : 50011   Mean   :  1.828   S      : 33898  
-##  FLOOD            : 23873   3rd Qu.:  2.000   E      : 30255  
-##  TORNADO          : 23139   Max.   :520.000   NW     : 22355  
-##  (Other)          :120235                     (Other):125409  
-##          BGN_LOCATI                  END_DATE             END_TIME     
-##               : 89178   4/27/2011 0:00:00:  1203   06:00:00 PM:  9512  
-##  COUNTYWIDE   : 19351   5/25/2011 0:00:00:  1193   05:00:00 PM:  8066  
-##  SPRINGFIELD  :   843   4/4/2011 0:00:00 :  1004   04:00:00 PM:  7838  
-##  SOUTH PORTION:   803   5/30/2004 0:00:00:   991   12:00:00 PM:  7343  
-##  NORTH PORTION:   767   4/7/2006 0:00:00 :   986   11:59:00 PM:  7003  
-##  COLUMBIA     :   750   4/2/2006 0:00:00 :   966   03:00:00 PM:  6907  
-##  (Other)      :523134   (Other)          :628483   (Other)    :588157  
-##    COUNTY_END COUNTYENDN       END_RANGE          END_AZI      
-##  Min.   :0    Mode:logical   Min.   :  0.000          :462342  
-##  1st Qu.:0    NA's:634826    1st Qu.:  0.000   N      : 27476  
-##  Median :0                   Median :  0.000   S      : 21679  
-##  Mean   :0                   Mean   :  1.307   W      : 19752  
-##  3rd Qu.:0                   3rd Qu.:  1.000   E      : 19367  
-##  Max.   :0                   Max.   :176.000   NE     : 14271  
-##                                                (Other): 69939  
-##          END_LOCATI         LENGTH             WIDTH        
-##               :245328   Min.   :  0.0000   Min.   :   0.00  
-##  COUNTYWIDE   : 19404   1st Qu.:  0.0000   1st Qu.:   0.00  
-##  SOUTH PORTION:   826   Median :  0.0000   Median :   0.00  
-##  NORTH PORTION:   763   Mean   :  0.1043   Mean   :   4.77  
-##  SPRINGFIELD  :   575   3rd Qu.:  0.0000   3rd Qu.:   0.00  
-##  COLUMBIA     :   558   Max.   :400.0000   Max.   :4400.00  
-##  (Other)      :367372                                       
-##        F               MAG             FATALITIES          INJURIES       
-##  Min.   :0.0      Min.   :    0.00   Min.   :  0.0000   Min.   :0.00e+00  
-##  1st Qu.:0.0      1st Qu.:    0.00   1st Qu.:  0.0000   1st Qu.:0.00e+00  
-##  Median :0.0      Median :   50.00   Median :  0.0000   Median :0.00e+00  
-##  Mean   :0.6      Mean   :   45.81   Mean   :  0.0133   Mean   :8.97e-02  
-##  3rd Qu.:1.0      3rd Qu.:   75.00   3rd Qu.:  0.0000   3rd Qu.:0.00e+00  
-##  Max.   :5.0      Max.   :22000.00   Max.   :158.0000   Max.   :1.15e+03  
-##  NA's   :611681                                                           
-##     PROPDMG          PROPDMGEXP        CROPDMG         CROPDMGEXP    
-##  Min.   :   0.00   K      :360754   Min.   :  0.00          :362955  
-##  1st Qu.:   0.00          :266739   1st Qu.:  0.00   K      :270121  
-##  Median :   0.00   M      :  7301   Median :  0.00   M      :  1746  
-##  Mean   :  11.95   B      :    31   Mean   :  1.88   B      :     4  
-##  3rd Qu.:   1.50   0      :     1   3rd Qu.:  0.00   ?      :     0  
-##  Max.   :5000.00   -      :     0   Max.   :990.00   0      :     0  
-##                    (Other):     0                    (Other):     0  
-##       WFO                                       STATEOFFIC    
-##  OUN    : 17393   TEXAS, North                       : 12193  
-##  TSA    : 12483   ARKANSAS, Central and North Central: 11738  
-##  JAN    : 12446   IOWA, Central                      : 11345  
-##  FWD    : 12193   KANSAS, Southwest                  : 11212  
-##  PHI    : 12190   GEORGIA, North and Central         : 11120  
-##  LZK    : 11738   KANSAS, Southeast                  : 10960  
-##  (Other):556383   (Other)                            :566258  
-##                                                                                                                                                                                                     ZONENAMES     
-##                                                                                                                                                                                                          :340563  
-##                                                                                                                                                                                                          :205075  
-##  GREATER RENO / CARSON CITY / M - GREATER RENO / CARSON CITY / M                                                                                                                                         :   624  
-##  GREATER LAKE TAHOE AREA - GREATER LAKE TAHOE AREA                                                                                                                                                       :   591  
-##  MADISON - MADISON                                                                                                                                                                                       :   296  
-##  MONO - MONO                                                                                                                                                                                             :   294  
-##  (Other)                                                                                                                                                                                                 : 87383  
-##     LATITUDE      LONGITUDE       LATITUDE_E     LONGITUDE_    
-##  Min.   :   0   Min.   :    0   Min.   :   0   Min.   :     0  
-##  1st Qu.:2939   1st Qu.: 7340   1st Qu.:   0   1st Qu.:     0  
-##  Median :3604   Median : 8700   Median :3027   Median :  7558  
-##  Mean   :2913   Mean   : 6982   Mean   :1973   Mean   :  4764  
-##  3rd Qu.:4026   3rd Qu.: 9559   3rd Qu.:3812   3rd Qu.:  9229  
-##  Max.   :9706   Max.   :16612   Max.   :9706   Max.   :106220  
-##                                                                
-##                                            REMARKS           REFNUM      
-##                                                : 97473   Min.   :248768  
-##  Trees down.\n                                 :  1110   1st Qu.:408351  
-##  Several trees were blown down.\n              :   568   Median :573032  
-##  Trees were downed.\n                          :   446   Mean   :573347  
-##  Large trees and power lines were blown down.\n:   432   3rd Qu.:736776  
-##  A few trees were blown down.\n                :   398   Max.   :902297  
-##  (Other)                                       :534399                   
-##       date                 year     
-##  Min.   :1996-01-01   Min.   :1996  
-##  1st Qu.:2000-09-02   1st Qu.:2000  
-##  Median :2005-05-08   Median :2005  
-##  Mean   :2004-10-08   Mean   :2004  
-##  3rd Qu.:2008-08-14   3rd Qu.:2008  
-##  Max.   :2011-11-30   Max.   :2011  
-## 
-```
+6. Select necesary fields: EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP.
 
 
 ```r
@@ -400,8 +170,18 @@ library(dplyr)
 #Crop damages, and Crop damages exponent.
 dataStatesProcessed %>% 
         select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) -> dataPreprocessed
-        
+```
 
+7. Evaluate event types and clean. Do this by unifying and removing event types:
+
+Use [http://www.ncdc.noaa.gov/stormevents/pd01016005curr.pdf] to clean types.
+
+* Unify TSTM WIND with THUNDERSTORM WIND.
+* Unify EXCESSIVE HEAT with HEAT.
+* Remove Summary, that is not an Event Type.
+
+
+```r
 #Evaluate how many levels have the dataset
 unique(dataPreprocessed$EVTYPE)
 ```
@@ -659,23 +439,61 @@ unique(dataPreprocessed$EVTYPE)
 ```
 
 ```r
+##Running the report, are detected some Events that are repeated in the top 10 table.
+#TSTM WIND it's the same as THUNDERSTORM WIND. We make the sustitution on data
+dataPreprocessed[grepl(pattern = "TSTM WIND", x=dataPreprocessed$EVTYPE),]$EVTYPE <- "THUNDERSTORM WIND"
+
+#EXCESSIVE HEAT it's the same as HEAT. We make the sustitution on data
+dataPreprocessed[grepl(pattern = "EXCESSIVE HEAT", x=dataPreprocessed$EVTYPE),]$EVTYPE <- "HEAT"
+
 #Remove Summary from event type
 dataPreprocessed <- dataPreprocessed[!grepl(pattern = "Summary", x=dataPreprocessed$EVTYPE),]
+```
 
-#Create Property damage total
-#Type of exponents -> Billion, Million, K thousand
+8. Analyze content of PROPDMGEXP and CROPDMGEXP:
+
+
+```r
+summary(dataPreprocessed$PROPDMGEXP)
+```
+
+```
+##             -      ?      +      0      1      2      3      4      5 
+## 266666      0      0      0      1      0      0      0      0      0 
+##      6      7      8      B      h      H      K      m      M 
+##      0      0      0     31      0      0 360754      0   7301
+```
+
+```r
+summary(dataPreprocessed$CROPDMGEXP)
+```
+
+```
+##             ?      0      2      B      k      K      m      M 
+## 362882      0      0      0      4      0 270121      0   1746
+```
+
+
+9. Create new columns: 
+* HealthDamage = FATALITIES + INJURIES
+* Transform PROPDMGEXP into a number: B -> 10^9, M -> 10^6, K -> 10^3
+* PropertyDamage = PROPDMG * PROPDMGEXP
+
+
+```r
+#Create Health harm total
 summary(dataPreprocessed)
 ```
 
 ```
 ##                EVTYPE         FATALITIES          INJURIES       
-##  HAIL             :207684   Min.   :  0.0000   Min.   :0.00e+00  
-##  TSTM WIND        :128568   1st Qu.:  0.0000   1st Qu.:0.00e+00  
-##  THUNDERSTORM WIND: 81316   Median :  0.0000   Median :0.00e+00  
-##  FLASH FLOOD      : 50011   Mean   :  0.0133   Mean   :8.97e-02  
-##  FLOOD            : 23873   3rd Qu.:  0.0000   3rd Qu.:0.00e+00  
-##  TORNADO          : 23139   Max.   :158.0000   Max.   :1.15e+03  
-##  (Other)          :120162                                        
+##  THUNDERSTORM WIND:210931   Min.   :  0.0000   Min.   :0.00e+00  
+##  HAIL             :207684   1st Qu.:  0.0000   1st Qu.:0.00e+00  
+##  FLASH FLOOD      : 50011   Median :  0.0000   Median :0.00e+00  
+##  FLOOD            : 23873   Mean   :  0.0133   Mean   :8.97e-02  
+##  TORNADO          : 23139   3rd Qu.:  0.0000   3rd Qu.:0.00e+00  
+##  HIGH WIND        : 19874   Max.   :158.0000   Max.   :1.15e+03  
+##  (Other)          : 99241                                        
 ##     PROPDMG          PROPDMGEXP        CROPDMG         CROPDMGEXP    
 ##  Min.   :   0.00   K      :360754   Min.   :  0.00          :362882  
 ##  1st Qu.:   0.00          :266666   1st Qu.:  0.00   K      :270121  
@@ -688,83 +506,196 @@ summary(dataPreprocessed)
 
 ```r
 dataPreprocessed %>%
-         mutate(CombinedHealthDamage = FATALITIES + INJURIES) -> dataPreprocessed 
+         mutate(HealthDamage = FATALITIES + INJURIES) -> dataPreprocessed 
 
+#Create Property damage total
+#Type of exponents -> Billion, Million, K thousand
 dataPreprocessed %>%
          mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
                                      ifelse(PROPDMGEXP == 'M', 10^6, 
                                             ifelse(PROPDMGEXP == 'K', 10^3, 
                                                    ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%
-         mutate(totalPROPDMG = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
+         mutate(PropertyDamage = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
+
+#Create Property damage total
+#Type of exponents -> Billion, Million, K thousand
+dataPreprocessed %>%
+         mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
+                                     ifelse(PROPDMGEXP == 'M', 10^6, 
+                                            ifelse(PROPDMGEXP == 'K', 10^3, 
+                                                   ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%
+         mutate(PropertyDamage = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
 ```
 
 
 ```r
-##TOP 20 of Fatalities per Event Type
+##TOP per Event Type
+#Set top to 10
+top <- 10
+
+##TOP of Combined Health Harmful per Event Type
+#Group by EVTYPE and sum all HealthDamage, rename columns and order desc by HealthDamage
+dataAgregateCombined <- with(dataPreprocessed, aggregate(HealthDamage, list(EVTYPE), sum))
+dataAgregateCombined <- rename(dataAgregateCombined, EventType = Group.1, HealthDamage = x)
+dataAgrCombinedTop <- arrange(dataAgregateCombined, desc(HealthDamage))[1:top,]
+
+#Calculate total Health damage and total Health damage per TOP10 and TOP3
+totalHealthDamage <- sum(dataAgregateCombined$HealthDamage)
+totalHealthDamageTop10 <- sum(dataAgrCombinedTop$HealthDamage)
+totalHealthDamageTop3 <- sum(dataAgrCombinedTop$HealthDamage[1:3])
+
+
+#Calculate percent of Health damage per Event Type
+dataAgrCombinedTop %>% mutate(percentHealthDamage = round(HealthDamage / totalHealthDamage * 100,1)) -> dataAgrCombinedTop
+
+
+
+##TOP of Fatalities per Event Type
 dataAgregateFatalities <- with(dataPreprocessed, aggregate(FATALITIES, list(EVTYPE), sum))
-dataAgregateFatalities <- rename(dataAgregateFatalities, EVTYPE = Group.1, FATALITIES = x)
-dAFatalitiesTop20 <-arrange(dataAgregateFatalities,desc(FATALITIES))[1:20,]
+dataAgregateFatalities <- rename(dataAgregateFatalities, EventType = Group.1, FATALITIES = x)
+dAFatalitiesTop <-arrange(dataAgregateFatalities,desc(FATALITIES))[1:top,]
 
-#TOP 20 of Injuries per Event Type
+totalFatalities <- sum(dataAgregateFatalities$FATALITIES)
+
+dAFatalitiesTop %>% mutate(percentFatalities = round(FATALITIES / totalFatalities * 100,1)) -> dAFatalitiesTop
+
+#TOP of Injuries per Event Type
 dataAgregateINJURIES <- with(dataPreprocessed, aggregate(INJURIES, list(EVTYPE), sum))
-dataAgregateINJURIES <- rename(dataAgregateINJURIES, EVTYPE = Group.1, INJURIES = x)
-dAINJURIESTop20 <- arrange(dataAgregateINJURIES, desc(INJURIES))[1:20,]
+dataAgregateINJURIES <- rename(dataAgregateINJURIES, EventType = Group.1, INJURIES = x)
+dAInjuriesTop <- arrange(dataAgregateINJURIES, desc(INJURIES))[1:top,]
 
-#TOP 20 of Combined Health Damage per Event Type
-dataAgregateCombined <- with(dataPreprocessed, aggregate(CombinedHealthDamage, list(EVTYPE), sum))
-dataAgregateCombined <- rename(dataAgregateCombined, EVTYPE = Group.1, CombinedHealthDamage = x)
-dACOMBINEDTop20 <- arrange(dataAgregateCombined, desc(CombinedHealthDamage))[1:20,]
+totalInjuries <- sum(dataAgregateINJURIES$INJURIES)
+
+dAInjuriesTop %>% mutate(percentInjuries = round(INJURIES / totalInjuries * 100,1)) -> dAInjuriesTop
+
+
+
 
 #Change the factor order
-dAFatalitiesTop20$EVTYPE <- factor(dAFatalitiesTop20$EVTYPE, levels = dAFatalitiesTop20$EVTYPE[order(dAFatalitiesTop20$FATALITIES)])
-dAINJURIESTop20$EVTYPE <- factor(dAINJURIESTop20$EVTYPE, levels = dAINJURIESTop20$EVTYPE[order(dAINJURIESTop20$INJURIES)])
-dACOMBINEDTop20$EVTYPE <- factor(dACOMBINEDTop20$EVTYPE, levels = dACOMBINEDTop20$EVTYPE[order(dACOMBINEDTop20$CombinedHealthDamage)])
+dAFatalitiesTop$EventType <- factor(dAFatalitiesTop$EventType, levels = dAFatalitiesTop$EventType[order(dAFatalitiesTop$FATALITIES)])
+
+dAInjuriesTop$EventType <- factor(dAInjuriesTop$EventType, levels = dAInjuriesTop$EventType[order(dAInjuriesTop$INJURIES)])
 ```
+
+Code to generate plots that shows Top 10 Event type per Fatalities, Injuries and combined of both:
 
 
 ```r
 library(ggplot2)
 
-gf <- ggplot(data=dAFatalitiesTop20, aes(x=EVTYPE, y=FATALITIES , fill=EVTYPE))
-gf <- gf + geom_bar(stat="identity", show_guide = FALSE)
-gf <- gf + coord_flip() + geom_text(aes(label=FATALITIES), vjust=0)
+#Var to define margin to put labels over bars on plot
+barMargin <- 1.2
 
-gi <- ggplot(data=dAINJURIESTop20, aes(x=EVTYPE, y=INJURIES , fill=EVTYPE))
-gi <- gi + geom_bar(stat="identity", show_guide = FALSE)
-gi <- gi + coord_flip() + geom_text(aes(label=INJURIES), vjust=0)
+##Plot combined Harmful 
 
-gc <- ggplot(data=dACOMBINEDTop20, aes(x=EVTYPE, y=CombinedHealthDamage , fill=EVTYPE))
-gc <- gc + geom_bar(stat="identity", show_guide = FALSE)
-gc <- gc + coord_flip() + geom_text(aes(label=CombinedHealthDamage), vjust=0)
+#Change factor order to plotting
+dataAgrCombinedTop$EventType <- factor(dataAgrCombinedTop$EventType, 
+                                       levels = dataAgrCombinedTop$EventType[order(dataAgrCombinedTop$HealthDamage)])
+
+gc <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=HealthDamage , fill=EventType))
+gc <- gc + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+gc <- gc + ylim(0, 30000)
+gc <- gc + coord_flip() + geom_text(aes(label=HealthDamage), hjust=-.25, vjust=0.5, size=4)
+gc <- gc + xlab("Event type") + ylab("Combined: Fatalities + Injuries")
+ggplotCombined <- gc + ggtitle("Top 10 Event type per Total Combined: Fatalities + Injuries")
+
+        gc <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=percentHealthDamage , fill=EventType))
+        gc <- gc + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+        gc <- gc + ylim(0, dataAgrCombinedTop$percentHealthDamage[1]*barMargin)
+        gc <- gc + coord_flip() + geom_text(aes(label=HealthDamage), hjust=-.25, vjust=0.5, size=4)
+        gc <- gc + xlab("") + ylab("% over total Combined: Fatalities + Injuries")
+        ggplotCombinedPercent <- gc + ggtitle("Top 10 Event type per % Combined: Fatalities + Injuries")
+
+gf <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=FATALITIES , fill=EventType))
+gf <- gf + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+gf <- gf + ylim(0, dAFatalitiesTop$FATALITIES[1]*1.2)
+gf <- gf + coord_flip() + geom_text(aes(label=FATALITIES), hjust=-0.25, vjust=0.5, size=4)
+gf <- gf + xlab("Event type") + ylab("Fatalities")
+ggplotFatalities <- gf + ggtitle("Top 10 Event type per Total Fatalities")
+
+        gfp <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=percentFatalities , fill=EventType))
+        gfp <- gfp + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+        gfp <- gfp + ylim(0, 25)
+        gfp <- gfp + coord_flip() + geom_text(aes(label=percentFatalities), hjust=-.25, vjust=0.5, size=4)
+        gfp <- gfp + xlab("") + ylab("% over total Fatalities")
+        gfp <- gfp + ggtitle("Top 10 Event type per % Fatalities")
+        ggplotFatalitiesPercent <- gfp + scale_fill_discrete(name="Sum of % from TOP 10")
+
+gi <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=INJURIES , fill=EventType))
+gi <- gi + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+gi <- gi + ylim(0, dAInjuriesTop$INJURIES[1]*barMargin)
+gi <- gi + coord_flip() + geom_text(aes(label=INJURIES), hjust=-.25, vjust=0.5, size=4)
+gi <- gi + xlab("Event type") + ylab("Injuries")
+ggplotInjuries <- gi + ggtitle("Top 10 Event type per Total Injuries")
+
+        gip <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=percentInjuries , fill=EventType))
+        gip <- gip + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+        gip <- gip + ylim(0, dAInjuriesTop$percentInjuries[1]*barMargin)
+        gip <- gip + coord_flip() + geom_text(aes(label=percentInjuries), hjust=-.25, vjust=0.5, size=4)
+        gip <- gip + xlab("") + ylab("% over total Injuries")
+        ggplotInjuriesPercent <- gip + ggtitle("Top 10 Event type per % Injuries")
+
+
 
 require(gridExtra)
+grid.arrange(ggplotCombined, ggplotCombinedPercent,
+             ggplotFatalities, ggplotFatalitiesPercent, 
+             ggplotInjuries, ggplotInjuriesPercent, 
+             nrow = 3, ncol=2,
+             main=textGrob("Figure 1. Top 10 Event Type per Fatalities, Injuries and combined damage."
+                           ,gp=gpar(fontsize=20,font=3))
+             )
 ```
+
+Table combined Harmful (Fatalities + Injuries):
+
+
+```r
+#Use library xtable to generate html table
+library(xtable)
+xtableHarmful <- xtable(select(dataAgrCombinedTop, EventType, HealthDamage, percentHealthDamage))
+print(xtableHarmful, type = "html")
+```
+
+##Results
+
+###Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+####TOP 10 most harmful effects to poblation are:
+
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Tue Jun 16 21:20:53 2015 -->
+<table border=1>
+<tr> <th>  </th> <th> EventType </th> <th> HealthDamage </th> <th> percentHealthDamage </th>  </tr>
+  <tr> <td align="right"> 1 </td> <td> TORNADO </td> <td align="right"> 22178.00 </td> <td align="right"> 33.90 </td> </tr>
+  <tr> <td align="right"> 2 </td> <td> HEAT </td> <td align="right"> 9323.00 </td> <td align="right"> 14.30 </td> </tr>
+  <tr> <td align="right"> 3 </td> <td> FLOOD </td> <td align="right"> 7163.00 </td> <td align="right"> 11.00 </td> </tr>
+  <tr> <td align="right"> 4 </td> <td> THUNDERSTORM WIND </td> <td align="right"> 5470.00 </td> <td align="right"> 8.40 </td> </tr>
+  <tr> <td align="right"> 5 </td> <td> LIGHTNING </td> <td align="right"> 4765.00 </td> <td align="right"> 7.30 </td> </tr>
+  <tr> <td align="right"> 6 </td> <td> FLASH FLOOD </td> <td align="right"> 2512.00 </td> <td align="right"> 3.80 </td> </tr>
+  <tr> <td align="right"> 7 </td> <td> WINTER STORM </td> <td align="right"> 1482.00 </td> <td align="right"> 2.30 </td> </tr>
+  <tr> <td align="right"> 8 </td> <td> HIGH WIND </td> <td align="right"> 1315.00 </td> <td align="right"> 2.00 </td> </tr>
+  <tr> <td align="right"> 9 </td> <td> WILDFIRE </td> <td align="right"> 986.00 </td> <td align="right"> 1.50 </td> </tr>
+  <tr> <td align="right"> 10 </td> <td> HURRICANE/TYPHOON </td> <td align="right"> 985.00 </td> <td align="right"> 1.50 </td> </tr>
+   </table>
+
+Top 10 is 86 % of total Harmful of all events. 
+Top 10 caused a total of 56179 victims.
+
+Top 3 is 59.2 % of total Harmful of all events. 
+Top 3 caused a total of  38664 victims.
+
+
+####Here's a detailed graph:
+
 
 ```
 ## Loading required package: gridExtra
 ## Loading required package: grid
 ```
 
-```r
-ga <- grid.arrange(gf, gi, gc, nrow = 2, ncol=2)
-```
+![](PA2_files/figure-html/printPlotHarmful-1.png) 
 
-![](PA2_files/figure-html/plotFatalitiesAndInjuries-1.png) 
-
-```r
-ga
-```
-
-```
-## NULL
-```
-
-
-##Results
-
-There should be a section titled Results in which your results are presented.
-
-##Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
 
 ##Across the United States, which types of events have the greatest economic consequences?
 
