@@ -13,18 +13,20 @@ Monday, June 15, 2015
 Based on data extracted from NOAA Storm Database for event registered in US from year 1996 to present, and analyzed with the procedure described in next section _Data Processing_, are obtained the subsequent conclusions:
 
 Human harmful:
-* TOP 3 most harmful events are TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%) with a 59.2 % of total harmful of all events. 
-* TOP 10 is 86 % of total harmful a total of 56179 fatalities or people injured.
+* *TOP 3* most harmful events are *TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%)* that causes *59.2 %* of total harmful of all events. 
+* *TOP 10* causes *86 %* of total harmful, it is a total of *56179 fatalities or people injured*.
 
 Economic damages:
-* TOP 3 event types that causes most economic damages are TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%) with a 59.2 % of total harmful of all events. 
-* TOP 10 is 86 % of total economic damages 
+* *TOP 3* event types that causes most economic damages are *FLOOD (37.4%), HURRICANTE/TYPHOON (18%) and STORM SURGE (10.9%)* that causes *66.3 %* of total Economic damage of all events. 
+* *TOP 10* causes *91.8 %* of total economic damages, over *397 Billion $*.
 
 _Can view detail in section Results._
 
+***
+
 ##Data Processing
 
-1. First step, adquire the date from [https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2] and put it into a data frame container:
+####1.First step, adquire the date from [https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2] and put it into a data frame container:
 
 
 ```r
@@ -40,13 +42,13 @@ if (!file.exists(fileName)) download.file(url = dataPath, destfile = fileName)
 dataInitial <- read.csv(bzfile(fileName))
 ```
 
-> As additional information, on http://www.ncdc.noaa.gov/stormevents/details.jsp?type=eventtype
-> inform about information recolection, and only have a complete collection from 1996 to present:
-> _3. All Event Types (48 from Directive 10-1605): From 1996 to present, 48 event types are recorded as defined in NWS Directive 10-1605._
+As additional information, on http://www.ncdc.noaa.gov/stormevents/details.jsp?type=eventtype
+inform about information recolection, and only have a complete collection from 1996 to present:
+_3. All Event Types (48 from Directive 10-1605): From 1996 to present, 48 event types are recorded as defined in NWS Directive 10-1605._
 
 Because only have a complete collection from 1996 to present is taken as criteria to filter the data to keep only information from 1996 to present.
 
-2. Get only relevant fields:
+####2.Get only relevant fields:
 
 
 ```r
@@ -69,7 +71,7 @@ For our process are needed: BGN_DATE, STATE, EVTYPE, FATALITIES, INJURIES, PROPD
 
 Are relevant for filter Date (BGN_DATE) and States (STATE).
 
-3. Analyze BGN_DATE and STATE, in order to know what class have the data and how to process it: 
+####3.Analyze BGN_DATE and STATE, in order to know what class have the data and how to process it: 
 
 
 ```r
@@ -101,7 +103,7 @@ str(dataInitial$STATE)
 
 BGN_DATE and STATE are factors.
 
-4. We need to transform BGN_DATE from factor into a Date class in order to filter by year.
+####4.We need to transform BGN_DATE from factor into a Date class in order to filter by year.
 
 
 ```r
@@ -127,7 +129,7 @@ percentDataRemYear <- round((1-(nrow(dataYearProcessed)/nrow(dataInitial))) * 10
 
 This filter has removed 27.57% of data.
 
-5. Filter to get only data from US States:
+####5.Filter to get only data from US States:
 
 
 ```r
@@ -141,7 +143,7 @@ percentDataRemStates <- round((1- (nrow(dataStatesProcessed)/nrow(dataYearProces
 This filter has removed 2.86% of data from precedent filter.
 
 
-6. Select necesary fields: EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP.
+####6.Select necesary fields: EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP.
 
 
 ```r
@@ -172,9 +174,9 @@ dataStatesProcessed %>%
         select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) -> dataPreprocessed
 ```
 
-7. Evaluate event types and clean. Do this by unifying and removing event types:
+####7.Evaluate event types and clean. Do this by unifying and removing event types:
 
-Use [http://www.ncdc.noaa.gov/stormevents/pd01016005curr.pdf] to clean types.
+Use [http://www.ncdc.noaa.gov/stormevents/pd01016005curr.pdf] as reference to clean types.
 
 * Unify TSTM WIND with THUNDERSTORM WIND.
 * Unify EXCESSIVE HEAT with HEAT.
@@ -450,7 +452,7 @@ dataPreprocessed[grepl(pattern = "EXCESSIVE HEAT", x=dataPreprocessed$EVTYPE),]$
 dataPreprocessed <- dataPreprocessed[!grepl(pattern = "Summary", x=dataPreprocessed$EVTYPE),]
 ```
 
-8. Analyze content of PROPDMGEXP and CROPDMGEXP:
+####8.Analyze content of PROPDMGEXP and CROPDMGEXP:
 
 
 ```r
@@ -473,15 +475,41 @@ summary(dataPreprocessed$CROPDMGEXP)
 ## 362882      0      0      0      4      0 270121      0   1746
 ```
 
+Use as EXP values B, M and K.
 
-9. Create new columns: 
+####9.Create new columns: 
+
 * HealthDamage = FATALITIES + INJURIES
-* Transform PROPDMGEXP into a number: B -> 10^9, M -> 10^6, K -> 10^3
-* PropertyDamage = PROPDMG * PROPDMGEXP
+* Transform PROPDMGEXP and CROPDMGEXP into a number: B -> 10^9, M -> 10^6, K -> 10^3
+* PropertyDamage = PROPDMG * newPROPDMGEXP
+* CropDamage = CROPDMG * newCROPDMGEXP
 
 
 ```r
 #Create Health harm total
+dataPreprocessed %>%
+         mutate(HealthDamage = FATALITIES + INJURIES) -> dataPreprocessed
+
+#Create Property damage total
+#Type of exponents -> Billion, Million, K thousand
+dataPreprocessed %>%
+         mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
+                                     ifelse(PROPDMGEXP == 'M', 10^6, 
+                                            ifelse(PROPDMGEXP == 'K', 10^3, 1)))) %>%
+         mutate(PropDamage = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
+
+#Create Crop damage total
+#Type of exponents -> Billion, Million, K thousand
+dataPreprocessed %>%
+         mutate(multiCROPDM = ifelse(CROPDMGEXP == 'B', 10^9, 
+                                     ifelse(CROPDMGEXP == 'M', 10^6, 
+                                            ifelse(CROPDMGEXP == 'K', 10^3, 1)))) %>%
+         mutate(CropDamage = as.numeric(multiCROPDM) * as.numeric(CROPDMG)) -> dataPreprocessed
+
+#Create Damage total
+dataPreprocessed %>%
+         mutate(EconomicDamage = PropDamage + CropDamage) -> dataPreprocessed
+
 summary(dataPreprocessed)
 ```
 
@@ -501,31 +529,27 @@ summary(dataPreprocessed)
 ##  Mean   :  11.95   B      :    31   Mean   :  1.88   B      :     4  
 ##  3rd Qu.:   1.50   0      :     1   3rd Qu.:  0.00   ?      :     0  
 ##  Max.   :5000.00   -      :     0   Max.   :990.00   0      :     0  
-##                    (Other):     0                    (Other):     0
+##                    (Other):     0                    (Other):     0  
+##   HealthDamage       multiPROPDM          PropDamage       
+##  Min.   :   0.000   Min.   :1.000e+00   Min.   :0.000e+00  
+##  1st Qu.:   0.000   1st Qu.:1.000e+00   1st Qu.:0.000e+00  
+##  Median :   0.000   Median :1.000e+03   Median :0.000e+00  
+##  Mean   :   0.103   Mean   :6.091e+04   Mean   :5.722e+05  
+##  3rd Qu.:   0.000   3rd Qu.:1.000e+03   3rd Qu.:2.000e+03  
+##  Max.   :1308.000   Max.   :1.000e+09   Max.   :1.150e+11  
+##                                                            
+##   multiCROPDM          CropDamage        EconomicDamage     
+##  Min.   :1.000e+00   Min.   :0.000e+00   Min.   :0.000e+00  
+##  1st Qu.:1.000e+00   1st Qu.:0.000e+00   1st Qu.:0.000e+00  
+##  Median :1.000e+00   Median :0.000e+00   Median :0.000e+00  
+##  Mean   :9.478e+03   Mean   :5.361e+04   Mean   :6.258e+05  
+##  3rd Qu.:1.000e+03   3rd Qu.:0.000e+00   3rd Qu.:2.000e+03  
+##  Max.   :1.000e+09   Max.   :1.510e+09   Max.   :1.150e+11  
+## 
 ```
 
-```r
-dataPreprocessed %>%
-         mutate(HealthDamage = FATALITIES + INJURIES) -> dataPreprocessed 
 
-#Create Property damage total
-#Type of exponents -> Billion, Million, K thousand
-dataPreprocessed %>%
-         mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
-                                     ifelse(PROPDMGEXP == 'M', 10^6, 
-                                            ifelse(PROPDMGEXP == 'K', 10^3, 
-                                                   ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%
-         mutate(PropertyDamage = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
-
-#Create Property damage total
-#Type of exponents -> Billion, Million, K thousand
-dataPreprocessed %>%
-         mutate(multiPROPDM = ifelse(PROPDMGEXP == 'B', 10^9, 
-                                     ifelse(PROPDMGEXP == 'M', 10^6, 
-                                            ifelse(PROPDMGEXP == 'K', 10^3, 
-                                                   ifelse(PROPDMGEXP == 'H', 100, 1))))) %>%
-         mutate(PropertyDamage = as.numeric(multiPROPDM) * as.numeric(PROPDMG)) -> dataPreprocessed
-```
+####10.Create TOP10 data sets Harmful and Economic damages:
 
 
 ```r
@@ -539,45 +563,125 @@ dataAgregateCombined <- with(dataPreprocessed, aggregate(HealthDamage, list(EVTY
 dataAgregateCombined <- rename(dataAgregateCombined, EventType = Group.1, HealthDamage = x)
 dataAgrCombinedTop <- arrange(dataAgregateCombined, desc(HealthDamage))[1:top,]
 
+#Change the factor order
+dataAgrCombinedTop$EventType <- factor(dataAgrCombinedTop$EventType, levels = dataAgrCombinedTop$EventType[order(dataAgrCombinedTop$HealthDamage)])
+
 #Calculate total Health damage and total Health damage per TOP10 and TOP3
 totalHealthDamage <- sum(dataAgregateCombined$HealthDamage)
-totalHealthDamageTop10 <- sum(dataAgrCombinedTop$HealthDamage)
-totalHealthDamageTop3 <- sum(dataAgrCombinedTop$HealthDamage[1:3])
-
+total.HealthDamage.Top10 <- sum(dataAgrCombinedTop$HealthDamage)
+total.HealthDamage.Top3 <- sum(dataAgrCombinedTop$HealthDamage[1:3])
 
 #Calculate percent of Health damage per Event Type
 dataAgrCombinedTop %>% mutate(percentHealthDamage = round(HealthDamage / totalHealthDamage * 100,1)) -> dataAgrCombinedTop
 
 
-
 ##TOP of Fatalities per Event Type
+#Group by EVTYPE and sum all FATALITIES, rename columns and order desc by FATALITIES
 dataAgregateFatalities <- with(dataPreprocessed, aggregate(FATALITIES, list(EVTYPE), sum))
 dataAgregateFatalities <- rename(dataAgregateFatalities, EventType = Group.1, FATALITIES = x)
 dAFatalitiesTop <-arrange(dataAgregateFatalities,desc(FATALITIES))[1:top,]
 
+#Change the factor order
+dAFatalitiesTop$EventType <- factor(dAFatalitiesTop$EventType, levels = dAFatalitiesTop$EventType[order(dAFatalitiesTop$FATALITIES)])
+
+#Calculate total FATALITIES 
 totalFatalities <- sum(dataAgregateFatalities$FATALITIES)
 
+#Calculate percent of FATALITIES  per Event Type
 dAFatalitiesTop %>% mutate(percentFatalities = round(FATALITIES / totalFatalities * 100,1)) -> dAFatalitiesTop
 
-#TOP of Injuries per Event Type
+
+##TOP of Injuries per Event Type
+#Group by EVTYPE and sum all INJURIES, rename columns and order desc by INJURIES
 dataAgregateINJURIES <- with(dataPreprocessed, aggregate(INJURIES, list(EVTYPE), sum))
 dataAgregateINJURIES <- rename(dataAgregateINJURIES, EventType = Group.1, INJURIES = x)
 dAInjuriesTop <- arrange(dataAgregateINJURIES, desc(INJURIES))[1:top,]
 
+#Calculate total INJURIES 
 totalInjuries <- sum(dataAgregateINJURIES$INJURIES)
 
+#Calculate percent of INJURIES  per Event Type
 dAInjuriesTop %>% mutate(percentInjuries = round(INJURIES / totalInjuries * 100,1)) -> dAInjuriesTop
 
-
-
-
 #Change the factor order
-dAFatalitiesTop$EventType <- factor(dAFatalitiesTop$EventType, levels = dAFatalitiesTop$EventType[order(dAFatalitiesTop$FATALITIES)])
-
 dAInjuriesTop$EventType <- factor(dAInjuriesTop$EventType, levels = dAInjuriesTop$EventType[order(dAInjuriesTop$INJURIES)])
 ```
 
-Code to generate plots that shows Top 10 Event type per Fatalities, Injuries and combined of both:
+
+```r
+##TOP per Event Type
+#Set top to 10
+top <- 10
+
+##TOP of Combined Economic Damage per Event Type
+#Group by EVTYPE and sum all EconomicDamage, rename columns and order desc by EconomicDamage
+dataAgregate.EconomicDamage <- with(dataPreprocessed, aggregate(EconomicDamage, list(EVTYPE), sum))
+dataAgregate.EconomicDamage <- rename(dataAgregate.EconomicDamage, EventType = Group.1, EconomicDamage = x)
+dataAgregate.EconomicDamage.Top <- arrange(dataAgregate.EconomicDamage, desc(EconomicDamage))[1:top,]
+
+#Change the factor order
+dataAgregate.EconomicDamage.Top$EventType <- factor(dataAgregate.EconomicDamage.Top$EventType, levels = dataAgregate.EconomicDamage.Top$EventType[order(dataAgregate.EconomicDamage.Top$EconomicDamage)])
+
+#Calculate total Health damage and total Health damage per TOP10 and TOP3
+total.EconomicDamage <- sum(dataAgregate.EconomicDamage$EconomicDamage)
+total.EconomicDamage.Top10 <- sum(dataAgregate.EconomicDamage$EconomicDamage.Top)
+total.EconomicDamage.Top3 <- sum(dataAgregate.EconomicDamage$EconomicDamage.Top[1:3])
+total.EconomicDamage.Top10
+```
+
+```
+## [1] 0
+```
+
+```r
+total.EconomicDamage.Top3
+```
+
+```
+## [1] 0
+```
+
+```r
+#Calculate percent of Health damage per Event Type
+dataAgregate.EconomicDamage.Top %>% 
+        mutate(percent.EconomicDamage = round(EconomicDamage / total.EconomicDamage * 100,1)) -> dataAgregate.EconomicDamage.Top
+
+
+##TOP of Prop Damages per Event Type
+#Group by EVTYPE and sum all PropDamage, rename columns and order desc by PropDamage
+dataAgregate.PropDamage <- with(dataPreprocessed, aggregate(PropDamage, list(EVTYPE), sum))
+dataAgregate.PropDamage <- rename(dataAgregate.PropDamage, EventType = Group.1, PropDamage = x)
+dataAgregate.PropDamage.Top <-arrange(dataAgregate.PropDamage,desc(PropDamage))[1:top,]
+
+#Change the factor order
+dataAgregate.PropDamage.Top$EventType <- factor(dataAgregate.PropDamage.Top$EventType, levels = dataAgregate.PropDamage.Top$EventType[order(dataAgregate.PropDamage.Top$PropDamage)])
+
+#Calculate total FATALITIES 
+total.PropDamage <- sum(dataAgregate.PropDamage$PropDamage)
+
+#Calculate percent of FATALITIES  per Event Type
+dataAgregate.PropDamage.Top %>% 
+        mutate(percent.PropDamage = round(PropDamage / total.PropDamage * 100,1)) -> dataAgregate.PropDamage.Top
+
+
+##TOP of Crop Damages per Event Type
+#Group by EVTYPE and sum all CropDamage, rename columns and order desc by CropDamage
+dataAgregate.CropDamage <- with(dataPreprocessed, aggregate(CropDamage, list(EVTYPE), sum))
+dataAgregate.CropDamage <- rename(dataAgregate.CropDamage, EventType = Group.1, CropDamage = x)
+dataAgregate.CropDamage.Top <- arrange(dataAgregate.CropDamage, desc(CropDamage))[1:top,]
+
+#Calculate total INJURIES 
+total.CropDamage <- sum(dataAgregate.CropDamage$CropDamage)
+
+#Calculate percent of INJURIES  per Event Type
+dataAgregate.CropDamage.Top %>% 
+        mutate(percent.CropDamage = round(CropDamage / total.CropDamage * 100,1)) -> dataAgregate.CropDamage.Top
+
+#Change the factor order
+dataAgregate.CropDamage.Top$EventType <- factor(dataAgregate.CropDamage.Top$EventType, levels = dataAgregate.CropDamage.Top$EventType[order(dataAgregate.CropDamage.Top$CropDamage)])
+```
+
+####11. Code to generate plots that shows Top 10 Event type per Fatalities, Injuries and combined of both:
 
 
 ```r
@@ -592,48 +696,77 @@ barMargin <- 1.2
 dataAgrCombinedTop$EventType <- factor(dataAgrCombinedTop$EventType, 
                                        levels = dataAgrCombinedTop$EventType[order(dataAgrCombinedTop$HealthDamage)])
 
-gc <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=HealthDamage , fill=EventType))
-gc <- gc + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-gc <- gc + ylim(0, 30000)
-gc <- gc + coord_flip() + geom_text(aes(label=HealthDamage), hjust=-.25, vjust=0.5, size=4)
-gc <- gc + xlab("Event type") + ylab("Combined: Fatalities + Injuries")
-ggplotCombined <- gc + ggtitle("Top 10 Event type per Total Combined: Fatalities + Injuries")
+# getPlot <- function(dataPlot, xfield, yfield, xlabel, ylabel, title){
+#         g <- ggplot(data=dataPlot, aes(x=xfield, y=yfield , fill=xfield))
+#         g <- g + geom_bar(stat="identity", show_guide = FALSE, colour="black")
+#         g <- g + ylim(0, max(yfield)*1.2)
+#         g <- g + coord_flip() + geom_text(aes(label=yfield), hjust=-.25, vjust=0.5, size=4)
+#         g <- g + xlab(xlabel) + ylab(ylabel)
+#         g <- g + ggtitle(title)
+#         g
+#         #return ggplot.resultant
+# }
+# 
+# ggplotCombined <- getPlot(dataPlot = dataAgrCombinedTop, xfield = dataAgrCombinedTop$EventType, 
+#                           yfield = dataAgrCombinedTop$HealthDamage, xlabel = "Event type",
+#                           ylabel = "Combined: Fatalities + Injuries", 
+#                           title = "Top 10 Event type per Total Combined: Fatalities + Injuries")
 
-        gc <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=percentHealthDamage , fill=EventType))
-        gc <- gc + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-        gc <- gc + ylim(0, dataAgrCombinedTop$percentHealthDamage[1]*barMargin)
-        gc <- gc + coord_flip() + geom_text(aes(label=HealthDamage), hjust=-.25, vjust=0.5, size=4)
-        gc <- gc + xlab("") + ylab("% over total Combined: Fatalities + Injuries")
-        ggplotCombinedPercent <- gc + ggtitle("Top 10 Event type per % Combined: Fatalities + Injuries")
+##Common parameters
+titleSize <- 10
+gb <- geom_bar(stat="identity", show_guide = FALSE, colour="black")
+t <- theme(plot.title = element_text(size=titleSize))
+#gcommon <- gb + t     
 
-gf <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=FATALITIES , fill=EventType))
-gf <- gf + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-gf <- gf + ylim(0, dAFatalitiesTop$FATALITIES[1]*1.2)
-gf <- gf + coord_flip() + geom_text(aes(label=FATALITIES), hjust=-0.25, vjust=0.5, size=4)
-gf <- gf + xlab("Event type") + ylab("Fatalities")
-ggplotFatalities <- gf + ggtitle("Top 10 Event type per Total Fatalities")
 
-        gfp <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=percentFatalities , fill=EventType))
-        gfp <- gfp + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-        gfp <- gfp + ylim(0, 25)
-        gfp <- gfp + coord_flip() + geom_text(aes(label=percentFatalities), hjust=-.25, vjust=0.5, size=4)
-        gfp <- gfp + xlab("") + ylab("% over total Fatalities")
-        gfp <- gfp + ggtitle("Top 10 Event type per % Fatalities")
-        ggplotFatalitiesPercent <- gfp + scale_fill_discrete(name="Sum of % from TOP 10")
 
-gi <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=INJURIES , fill=EventType))
-gi <- gi + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-gi <- gi + ylim(0, dAInjuriesTop$INJURIES[1]*barMargin)
-gi <- gi + coord_flip() + geom_text(aes(label=INJURIES), hjust=-.25, vjust=0.5, size=4)
-gi <- gi + xlab("Event type") + ylab("Injuries")
-ggplotInjuries <- gi + ggtitle("Top 10 Event type per Total Injuries")
+g <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=HealthDamage, fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dataAgrCombinedTop$HealthDamage[1]*barMargin)
+g <- g + coord_flip() + geom_text(aes(label=HealthDamage), hjust=-.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab("Number of Fatalities + Injuries") 
+g <- g + ggtitle("Total Combined: Fatalities + Injuries per Event Type")
+ggplotCombined <- g + t
 
-        gip <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=percentInjuries , fill=EventType))
-        gip <- gip + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-        gip <- gip + ylim(0, dAInjuriesTop$percentInjuries[1]*barMargin)
-        gip <- gip + coord_flip() + geom_text(aes(label=percentInjuries), hjust=-.25, vjust=0.5, size=4)
-        gip <- gip + xlab("") + ylab("% over total Injuries")
-        ggplotInjuriesPercent <- gip + ggtitle("Top 10 Event type per % Injuries")
+        g <- ggplot(data=dataAgrCombinedTop, aes(x=EventType, y=percentHealthDamage , fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dataAgrCombinedTop$percentHealthDamage[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percentHealthDamage), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% Combined: Fatalities + Injuries")
+        g <- g + ggtitle("% Combined: Fatalities + Injuries per Event Type")
+        ggplotCombinedPercent <- g + t
+
+g <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=FATALITIES , fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dAFatalitiesTop$FATALITIES[1]*1.2)
+g <- g + coord_flip() + geom_text(aes(label=FATALITIES), hjust=-0.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab("Fatalities")
+g <- g + ggtitle("Total Fatalities per Event type")
+ggplotFatalities <- g + t
+
+        g <- ggplot(data=dAFatalitiesTop, aes(x=EventType, y=percentFatalities , fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dAFatalitiesTop$percentFatalities[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percentFatalities), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% Fatalities")
+        g <- g + ggtitle("% Fatalities per Event type")
+        ggplotFatalitiesPercent <- g + t
+
+g <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=INJURIES , fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dAInjuriesTop$INJURIES[1]*barMargin)
+g <- g + coord_flip() + geom_text(aes(label=INJURIES), hjust=-.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab("Injuries")
+g <- g + ggtitle("Total Injuries per Event type")
+ggplotInjuries <- g + t
+
+        g <- ggplot(data=dAInjuriesTop, aes(x=EventType, y=percentInjuries , fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dAInjuriesTop$percentInjuries[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percentInjuries), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% Injuries")
+        g <- g + ggtitle("% Injuries per Event type")
+        ggplotInjuriesPercent <- g + t
 
 
 
@@ -642,12 +775,12 @@ grid.arrange(ggplotCombined, ggplotCombinedPercent,
              ggplotFatalities, ggplotFatalitiesPercent, 
              ggplotInjuries, ggplotInjuriesPercent, 
              nrow = 3, ncol=2,
-             main=textGrob("Figure 1. Top 10 Event Type per Fatalities, Injuries and combined damage."
-                           ,gp=gpar(fontsize=20,font=3))
+             main=textGrob("Figure 1. Top 10 Total number of Fatalities, Injuries and Combined Damage per Event Type."
+                           ,gp=gpar(fontsize=16,font=3))
              )
 ```
 
-Table combined Harmful (Fatalities + Injuries):
+####12.Create Table combined Harmful (Fatalities + Injuries):
 
 
 ```r
@@ -657,6 +790,101 @@ xtableHarmful <- xtable(select(dataAgrCombinedTop, EventType, HealthDamage, perc
 print(xtableHarmful, type = "html")
 ```
 
+
+####13.Code to generate plots that shows Top 10 Event type per Property damages, Crop damages and combined of both:
+
+
+```r
+library(ggplot2)
+
+#Common values for plots
+titleSize <- 10
+gb <- geom_bar(stat="identity", show_guide = FALSE, colour="black")
+t <- theme(plot.title = element_text(size=titleSize))
+barMargin <- 1.2
+unitsDollars <- 10^9
+labelDollars <- "US$ Billions"
+titleSize <- 10
+##Plot combined Harmful 
+
+g <- ggplot(data=dataAgregate.EconomicDamage.Top, aes(x=EventType, y=EconomicDamage/unitsDollars, fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dataAgregate.EconomicDamage.Top$EconomicDamage[1]/unitsDollars*barMargin)
+g <- g + coord_flip() + geom_text(aes(label=round(EconomicDamage/unitsDollars,1)), hjust=-.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab(labelDollars)
+g <- g + ggtitle("Event type vs. Economic Damage: Property + Crops")
+ggplot.EconomicDamage <- g + t
+
+        g <- ggplot(data=dataAgregate.EconomicDamage.Top, aes(x=EventType, y=percent.EconomicDamage , fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dataAgregate.EconomicDamage.Top$percent.EconomicDamage[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percent.EconomicDamage), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% over Total Economic Damage: Property + Crops")
+        g <- g + ggtitle("Event type vs. % Economic Damage: Property + Crops")
+        ggplot.EconomicDamage.Percent <- g + t
+        
+g <- ggplot(data=dataAgregate.PropDamage.Top, aes(x=EventType, y=PropDamage/unitsDollars, fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dataAgregate.PropDamage.Top$PropDamage[1]/unitsDollars*barMargin)
+g <- g + coord_flip() + geom_text(aes(label=round(PropDamage/unitsDollars,1)), hjust=-.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab(labelDollars)
+g <- g + ggtitle("Top 10 Event type vs. Property Damage")
+ggplot.PropDamage <- g + t
+
+        g <- ggplot(data=dataAgregate.PropDamage.Top, aes(x=EventType, y=percent.PropDamage, fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dataAgregate.PropDamage.Top$percent.PropDamage[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percent.PropDamage), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% over Total Property Damage")
+        g <- g + ggtitle("Top 10 Event type vs. % Property Damage")
+        ggplot.PropDamage.Percent <- g + t
+
+g <- ggplot(data=dataAgregate.CropDamage.Top, aes(x=EventType, y=CropDamage/unitsDollars, fill=EventType))
+g <- g + gb
+g <- g + ylim(0, dataAgregate.CropDamage.Top$CropDamage[1]/unitsDollars*barMargin)
+g <- g + coord_flip() + geom_text(aes(label=round(CropDamage/unitsDollars,1)), hjust=-.25, vjust=0.5, size=4)
+g <- g + xlab("Event type") + ylab(labelDollars)
+g <- g + ggtitle("Top 10 Event type vs. Crop Damage")
+ggplot.CropDamage <- g + t
+
+        g <- ggplot(data=dataAgregate.CropDamage.Top, aes(x=EventType, y=percent.CropDamage, fill=EventType))
+        g <- g + gb
+        g <- g + ylim(0, dataAgregate.CropDamage.Top$percent.CropDamage[1]*barMargin)
+        g <- g + coord_flip() + geom_text(aes(label=percent.CropDamage), hjust=-.25, vjust=0.5, size=4)
+        g <- g + xlab("") + ylab("% over Total Crop Damage")
+        g <- g + ggtitle("Top 10 Event type vs. % Crop Damage")
+        ggplot.CropDamage.Percent <- g + t
+
+require(gridExtra)
+```
+
+```
+## Loading required package: gridExtra
+## Loading required package: grid
+```
+
+```r
+grid.arrange(ggplot.EconomicDamage, ggplot.EconomicDamage.Percent,
+             ggplot.PropDamage, ggplot.PropDamage.Percent,
+             ggplot.CropDamage, ggplot.CropDamage.Percent,
+             nrow = 3, ncol=2,
+             main=textGrob("Figure 2. Top 10 Event Type per Property, Crops and Combined Economic Damage."
+                           ,gp=gpar(fontsize=16,font=3))
+             )
+```
+
+![](PA2_files/figure-html/plotEconomicDamages-1.png) 
+
+####14.Create Table Economic Damage:
+
+
+```r
+#Use library xtable to generate html table
+library(xtable)
+xtable.EconomicDamage <- xtable(select(dataAgregate.EconomicDamage.Top, EventType, EconomicDamage, percent.EconomicDamage))
+print(xtable.EconomicDamage, type = "html")
+```
+
 ##Results
 
 ###Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
@@ -664,7 +892,7 @@ print(xtableHarmful, type = "html")
 ####TOP 10 most harmful effects to poblation are:
 
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Tue Jun 16 21:20:53 2015 -->
+<!-- Wed Jun 17 19:50:28 2015 -->
 <table border=1>
 <tr> <th>  </th> <th> EventType </th> <th> HealthDamage </th> <th> percentHealthDamage </th>  </tr>
   <tr> <td align="right"> 1 </td> <td> TORNADO </td> <td align="right"> 22178.00 </td> <td align="right"> 33.90 </td> </tr>
@@ -686,16 +914,41 @@ Top 3 is 59.2 % of total Harmful of all events.
 Top 3 caused a total of  38664 victims.
 
 
-####Here's a detailed graph:
-
-
-```
-## Loading required package: gridExtra
-## Loading required package: grid
-```
+####Detailed graph:
 
 ![](PA2_files/figure-html/printPlotHarmful-1.png) 
 
 
 ##Across the United States, which types of events have the greatest economic consequences?
+
+####TOP 10 event type with greatest economic consequences are:
+
+<!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
+<!-- Wed Jun 17 19:50:29 2015 -->
+<table border=1>
+<tr> <th>  </th> <th> EventType </th> <th> EconomicDamage </th> <th> percent.EconomicDamage </th>  </tr>
+  <tr> <td align="right"> 1 </td> <td> FLOOD </td> <td align="right"> 148745225950.00 </td> <td align="right"> 37.40 </td> </tr>
+  <tr> <td align="right"> 2 </td> <td> HURRICANE/TYPHOON </td> <td align="right"> 71636600800.00 </td> <td align="right"> 18.00 </td> </tr>
+  <tr> <td align="right"> 3 </td> <td> STORM SURGE </td> <td align="right"> 43193466000.00 </td> <td align="right"> 10.90 </td> </tr>
+  <tr> <td align="right"> 4 </td> <td> TORNADO </td> <td align="right"> 24900147720.00 </td> <td align="right"> 6.30 </td> </tr>
+  <tr> <td align="right"> 5 </td> <td> HAIL </td> <td align="right"> 17071166370.00 </td> <td align="right"> 4.30 </td> </tr>
+  <tr> <td align="right"> 6 </td> <td> FLASH FLOOD </td> <td align="right"> 16271058610.00 </td> <td align="right"> 4.10 </td> </tr>
+  <tr> <td align="right"> 7 </td> <td> DROUGHT </td> <td align="right"> 14408462000.00 </td> <td align="right"> 3.60 </td> </tr>
+  <tr> <td align="right"> 8 </td> <td> HURRICANE </td> <td align="right"> 12098928010.00 </td> <td align="right"> 3.00 </td> </tr>
+  <tr> <td align="right"> 9 </td> <td> THUNDERSTORM WIND </td> <td align="right"> 8910913670.00 </td> <td align="right"> 2.20 </td> </tr>
+  <tr> <td align="right"> 10 </td> <td> TROPICAL STORM </td> <td align="right"> 7988131550.00 </td> <td align="right"> 2.00 </td> </tr>
+   </table>
+
+Top 10 accumulate 91.8 % of total Harmful of all events. 
+Top 10 caused a total of 0 US $ in economic damages.
+
+Top 3 accumulate 66.3 % of total Harmful of all events. 
+Top 3 caused a total of  0 US $ in economic damages.
+
+
+####Here's a detailed graph:
+
+![](PA2_files/figure-html/printPlotEconomicDamages-1.png) 
+
+
 
