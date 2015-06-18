@@ -1,4 +1,4 @@
-# Data Science - Reproducible Research - Peer Assessment 2 - Analysis of Weather Event in US and Harmful and Economic impact using NOAA Storm Database
+# Analysis of Weather Event in US and Harmful and Economic impact using NOAA Storm Database
 by jmvilaverde  
 Monday, June 15, 2015  
 
@@ -12,13 +12,15 @@ Monday, June 15, 2015
 
 Based on data extracted from NOAA Storm Database for event registered in US from year 1996 to present, and analyzed with the procedure described in next section _Data Processing_, are obtained the subsequent conclusions:
 
-Human harmful:
-* *TOP 3* most harmful events are *TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%)* that causes *59.2 %* of total harmful of all events. 
-* *TOP 10* causes *86 %* of total harmful, it is a total of *56179 fatalities or people injured*.
+####Human harmful:
+**TOP 3** most harmful events are **TORNADO (33.9%), HEAT (14.3%) and FLOOD (11%)** that causes **59.2 %** of total harmful of all events, it is a total of **38,664 fatalities or people injured**. 
 
-Economic damages:
-* *TOP 3* event types that causes most economic damages are *FLOOD (37.4%), HURRICANTE/TYPHOON (18%) and STORM SURGE (10.9%)* that causes *66.3 %* of total Economic damage of all events. 
-* *TOP 10* causes *91.8 %* of total economic damages, over *397 Billion $*.
+**TOP 10** causes **86 %** of total harmful, it is a total of **56,179 fatalities or people injured**.
+
+####Economic damages:
+**TOP 3** event types that causes most economic damages are **FLOOD (37.4%), HURRICANTE/TYPHOON (18%) and STORM SURGE (10.9%)** that causes **66.3 %** of total Economic damage of all events, over **263.5 Billion $**. 
+
+**TOP 10** causes **91.8 %** of total economic damages, over **365.2 Billion $**.
 
 _Can view detail in section Results._
 
@@ -46,7 +48,7 @@ As additional information, on http://www.ncdc.noaa.gov/stormevents/details.jsp?t
 inform about information recolection, and only have a complete collection from 1996 to present:
 _3. All Event Types (48 from Directive 10-1605): From 1996 to present, 48 event types are recorded as defined in NWS Directive 10-1605._
 
-Because only have a complete collection from 1996 to present is taken as criteria to filter the data to keep only information from 1996 to present.
+Because only have a complete collection from 1996 to present, is taken as criteria to filter the data to keep only information from 1996 to present.
 
 ####2.Get only relevant fields:
 
@@ -613,6 +615,9 @@ dAInjuriesTop$EventType <- factor(dAInjuriesTop$EventType, levels = dAInjuriesTo
 #Set top to 10
 top <- 10
 
+#Function to print money with format
+printMoney <- function(x) format(x, digits=10, nsmall=2, decimal.mark=",", big.mark=".", scientific=FALSE)
+
 ##TOP of Combined Economic Damage per Event Type
 #Group by EVTYPE and sum all EconomicDamage, rename columns and order desc by EconomicDamage
 dataAgregate.EconomicDamage <- with(dataPreprocessed, aggregate(EconomicDamage, list(EVTYPE), sum))
@@ -624,24 +629,9 @@ dataAgregate.EconomicDamage.Top$EventType <- factor(dataAgregate.EconomicDamage.
 
 #Calculate total Health damage and total Health damage per TOP10 and TOP3
 total.EconomicDamage <- sum(dataAgregate.EconomicDamage$EconomicDamage)
-total.EconomicDamage.Top10 <- sum(dataAgregate.EconomicDamage$EconomicDamage.Top)
-total.EconomicDamage.Top3 <- sum(dataAgregate.EconomicDamage$EconomicDamage.Top[1:3])
-total.EconomicDamage.Top10
-```
+total.EconomicDamage.Top10 <- printMoney(sum(dataAgregate.EconomicDamage.Top$EconomicDamage))
+total.EconomicDamage.Top3 <- printMoney(sum(dataAgregate.EconomicDamage.Top$EconomicDamage[1:3]))
 
-```
-## [1] 0
-```
-
-```r
-total.EconomicDamage.Top3
-```
-
-```
-## [1] 0
-```
-
-```r
 #Calculate percent of Health damage per Event Type
 dataAgregate.EconomicDamage.Top %>% 
         mutate(percent.EconomicDamage = round(EconomicDamage / total.EconomicDamage * 100,1)) -> dataAgregate.EconomicDamage.Top
@@ -681,7 +671,7 @@ dataAgregate.CropDamage.Top %>%
 dataAgregate.CropDamage.Top$EventType <- factor(dataAgregate.CropDamage.Top$EventType, levels = dataAgregate.CropDamage.Top$EventType[order(dataAgregate.CropDamage.Top$CropDamage)])
 ```
 
-####11. Code to generate plots that shows Top 10 Event type per Fatalities, Injuries and combined of both:
+####11. Code to generate Figure 1 plots - Top 10 Event type per Fatalities, Injuries and combined of both:
 
 
 ```r
@@ -695,22 +685,6 @@ barMargin <- 1.2
 #Change factor order to plotting
 dataAgrCombinedTop$EventType <- factor(dataAgrCombinedTop$EventType, 
                                        levels = dataAgrCombinedTop$EventType[order(dataAgrCombinedTop$HealthDamage)])
-
-# getPlot <- function(dataPlot, xfield, yfield, xlabel, ylabel, title){
-#         g <- ggplot(data=dataPlot, aes(x=xfield, y=yfield , fill=xfield))
-#         g <- g + geom_bar(stat="identity", show_guide = FALSE, colour="black")
-#         g <- g + ylim(0, max(yfield)*1.2)
-#         g <- g + coord_flip() + geom_text(aes(label=yfield), hjust=-.25, vjust=0.5, size=4)
-#         g <- g + xlab(xlabel) + ylab(ylabel)
-#         g <- g + ggtitle(title)
-#         g
-#         #return ggplot.resultant
-# }
-# 
-# ggplotCombined <- getPlot(dataPlot = dataAgrCombinedTop, xfield = dataAgrCombinedTop$EventType, 
-#                           yfield = dataAgrCombinedTop$HealthDamage, xlabel = "Event type",
-#                           ylabel = "Combined: Fatalities + Injuries", 
-#                           title = "Top 10 Event type per Total Combined: Fatalities + Injuries")
 
 ##Common parameters
 titleSize <- 10
@@ -786,12 +760,17 @@ grid.arrange(ggplotCombined, ggplotCombinedPercent,
 ```r
 #Use library xtable to generate html table
 library(xtable)
-xtableHarmful <- xtable(select(dataAgrCombinedTop, EventType, HealthDamage, percentHealthDamage))
+
+dataAgrCombinedTop %>% 
+mutate(Health.Damage = as.character(HealthDamage)) %>%
+rename(Percent = percentHealthDamage, Event.Type = EventType) -> table.Harmful
+
+xtableHarmful <- xtable(select(table.Harmful, Event.Type, Health.Damage, Percent), align = rep("c", dim(table.Harmful)[2]))
 print(xtableHarmful, type = "html")
 ```
 
 
-####13.Code to generate plots that shows Top 10 Event type per Property damages, Crop damages and combined of both:
+####13.Code to generate Figure 2 plots - Top 10 Event type per Property damages, Crop damages and combined of both:
 
 
 ```r
@@ -856,14 +835,6 @@ ggplot.CropDamage <- g + t
         ggplot.CropDamage.Percent <- g + t
 
 require(gridExtra)
-```
-
-```
-## Loading required package: gridExtra
-## Loading required package: grid
-```
-
-```r
 grid.arrange(ggplot.EconomicDamage, ggplot.EconomicDamage.Percent,
              ggplot.PropDamage, ggplot.PropDamage.Percent,
              ggplot.CropDamage, ggplot.CropDamage.Percent,
@@ -873,17 +844,23 @@ grid.arrange(ggplot.EconomicDamage, ggplot.EconomicDamage.Percent,
              )
 ```
 
-![](PA2_files/figure-html/plotEconomicDamages-1.png) 
-
 ####14.Create Table Economic Damage:
 
 
 ```r
 #Use library xtable to generate html table
 library(xtable)
-xtable.EconomicDamage <- xtable(select(dataAgregate.EconomicDamage.Top, EventType, EconomicDamage, percent.EconomicDamage))
+
+dataAgregate.EconomicDamage.Top %>% 
+mutate(Billions.Dollars = EconomicDamage/10^9) %>%
+rename(Percent = percent.EconomicDamage, Event.Type = EventType) -> table.Economic.Damage
+
+        
+xtable.EconomicDamage <- xtable(select(table.Economic.Damage, Event.Type, Billions.Dollars, Percent), align = rep("c", dim(table.Economic.Damage)[2])) 
 print(xtable.EconomicDamage, type = "html")
 ```
+
+***
 
 ##Results
 
@@ -892,29 +869,30 @@ print(xtable.EconomicDamage, type = "html")
 ####TOP 10 most harmful effects to poblation are:
 
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Jun 17 19:50:28 2015 -->
+<!-- Thu Jun 18 10:54:49 2015 -->
 <table border=1>
-<tr> <th>  </th> <th> EventType </th> <th> HealthDamage </th> <th> percentHealthDamage </th>  </tr>
-  <tr> <td align="right"> 1 </td> <td> TORNADO </td> <td align="right"> 22178.00 </td> <td align="right"> 33.90 </td> </tr>
-  <tr> <td align="right"> 2 </td> <td> HEAT </td> <td align="right"> 9323.00 </td> <td align="right"> 14.30 </td> </tr>
-  <tr> <td align="right"> 3 </td> <td> FLOOD </td> <td align="right"> 7163.00 </td> <td align="right"> 11.00 </td> </tr>
-  <tr> <td align="right"> 4 </td> <td> THUNDERSTORM WIND </td> <td align="right"> 5470.00 </td> <td align="right"> 8.40 </td> </tr>
-  <tr> <td align="right"> 5 </td> <td> LIGHTNING </td> <td align="right"> 4765.00 </td> <td align="right"> 7.30 </td> </tr>
-  <tr> <td align="right"> 6 </td> <td> FLASH FLOOD </td> <td align="right"> 2512.00 </td> <td align="right"> 3.80 </td> </tr>
-  <tr> <td align="right"> 7 </td> <td> WINTER STORM </td> <td align="right"> 1482.00 </td> <td align="right"> 2.30 </td> </tr>
-  <tr> <td align="right"> 8 </td> <td> HIGH WIND </td> <td align="right"> 1315.00 </td> <td align="right"> 2.00 </td> </tr>
-  <tr> <td align="right"> 9 </td> <td> WILDFIRE </td> <td align="right"> 986.00 </td> <td align="right"> 1.50 </td> </tr>
-  <tr> <td align="right"> 10 </td> <td> HURRICANE/TYPHOON </td> <td align="right"> 985.00 </td> <td align="right"> 1.50 </td> </tr>
+<tr> <th>  </th> <th> Event.Type </th> <th> Health.Damage </th> <th> Percent </th>  </tr>
+  <tr> <td align="center"> 1 </td> <td align="center"> TORNADO </td> <td align="center"> 22178 </td> <td align="center"> 33.90 </td> </tr>
+  <tr> <td align="center"> 2 </td> <td align="center"> HEAT </td> <td align="center"> 9323 </td> <td align="center"> 14.30 </td> </tr>
+  <tr> <td align="center"> 3 </td> <td align="center"> FLOOD </td> <td align="center"> 7163 </td> <td align="center"> 11.00 </td> </tr>
+  <tr> <td align="center"> 4 </td> <td align="center"> THUNDERSTORM WIND </td> <td align="center"> 5470 </td> <td align="center"> 8.40 </td> </tr>
+  <tr> <td align="center"> 5 </td> <td align="center"> LIGHTNING </td> <td align="center"> 4765 </td> <td align="center"> 7.30 </td> </tr>
+  <tr> <td align="center"> 6 </td> <td align="center"> FLASH FLOOD </td> <td align="center"> 2512 </td> <td align="center"> 3.80 </td> </tr>
+  <tr> <td align="center"> 7 </td> <td align="center"> WINTER STORM </td> <td align="center"> 1482 </td> <td align="center"> 2.30 </td> </tr>
+  <tr> <td align="center"> 8 </td> <td align="center"> HIGH WIND </td> <td align="center"> 1315 </td> <td align="center"> 2.00 </td> </tr>
+  <tr> <td align="center"> 9 </td> <td align="center"> WILDFIRE </td> <td align="center"> 986 </td> <td align="center"> 1.50 </td> </tr>
+  <tr> <td align="center"> 10 </td> <td align="center"> HURRICANE/TYPHOON </td> <td align="center"> 985 </td> <td align="center"> 1.50 </td> </tr>
    </table>
 
-Top 10 is 86 % of total Harmful of all events. 
-Top 10 caused a total of 56179 victims.
+> Top 10 is 86 % of total Harmful of all events, causing a total of 56179 victims.
 
-Top 3 is 59.2 % of total Harmful of all events. 
-Top 3 caused a total of  38664 victims.
+> Top 3 is 59.2 % of total Harmful of all events, causing a total of  38664 victims.
 
 
-####Detailed graph:
+```
+## Loading required package: gridExtra
+## Loading required package: grid
+```
 
 ![](PA2_files/figure-html/printPlotHarmful-1.png) 
 
@@ -924,29 +902,25 @@ Top 3 caused a total of  38664 victims.
 ####TOP 10 event type with greatest economic consequences are:
 
 <!-- html table generated in R 3.2.0 by xtable 1.7-4 package -->
-<!-- Wed Jun 17 19:50:29 2015 -->
+<!-- Thu Jun 18 10:54:51 2015 -->
 <table border=1>
-<tr> <th>  </th> <th> EventType </th> <th> EconomicDamage </th> <th> percent.EconomicDamage </th>  </tr>
-  <tr> <td align="right"> 1 </td> <td> FLOOD </td> <td align="right"> 148745225950.00 </td> <td align="right"> 37.40 </td> </tr>
-  <tr> <td align="right"> 2 </td> <td> HURRICANE/TYPHOON </td> <td align="right"> 71636600800.00 </td> <td align="right"> 18.00 </td> </tr>
-  <tr> <td align="right"> 3 </td> <td> STORM SURGE </td> <td align="right"> 43193466000.00 </td> <td align="right"> 10.90 </td> </tr>
-  <tr> <td align="right"> 4 </td> <td> TORNADO </td> <td align="right"> 24900147720.00 </td> <td align="right"> 6.30 </td> </tr>
-  <tr> <td align="right"> 5 </td> <td> HAIL </td> <td align="right"> 17071166370.00 </td> <td align="right"> 4.30 </td> </tr>
-  <tr> <td align="right"> 6 </td> <td> FLASH FLOOD </td> <td align="right"> 16271058610.00 </td> <td align="right"> 4.10 </td> </tr>
-  <tr> <td align="right"> 7 </td> <td> DROUGHT </td> <td align="right"> 14408462000.00 </td> <td align="right"> 3.60 </td> </tr>
-  <tr> <td align="right"> 8 </td> <td> HURRICANE </td> <td align="right"> 12098928010.00 </td> <td align="right"> 3.00 </td> </tr>
-  <tr> <td align="right"> 9 </td> <td> THUNDERSTORM WIND </td> <td align="right"> 8910913670.00 </td> <td align="right"> 2.20 </td> </tr>
-  <tr> <td align="right"> 10 </td> <td> TROPICAL STORM </td> <td align="right"> 7988131550.00 </td> <td align="right"> 2.00 </td> </tr>
+<tr> <th>  </th> <th> Event.Type </th> <th> Billions.Dollars </th> <th> Percent </th>  </tr>
+  <tr> <td align="center"> 1 </td> <td align="center"> FLOOD </td> <td align="center"> 148.75 </td> <td align="center"> 37.40 </td> </tr>
+  <tr> <td align="center"> 2 </td> <td align="center"> HURRICANE/TYPHOON </td> <td align="center"> 71.64 </td> <td align="center"> 18.00 </td> </tr>
+  <tr> <td align="center"> 3 </td> <td align="center"> STORM SURGE </td> <td align="center"> 43.19 </td> <td align="center"> 10.90 </td> </tr>
+  <tr> <td align="center"> 4 </td> <td align="center"> TORNADO </td> <td align="center"> 24.90 </td> <td align="center"> 6.30 </td> </tr>
+  <tr> <td align="center"> 5 </td> <td align="center"> HAIL </td> <td align="center"> 17.07 </td> <td align="center"> 4.30 </td> </tr>
+  <tr> <td align="center"> 6 </td> <td align="center"> FLASH FLOOD </td> <td align="center"> 16.27 </td> <td align="center"> 4.10 </td> </tr>
+  <tr> <td align="center"> 7 </td> <td align="center"> DROUGHT </td> <td align="center"> 14.41 </td> <td align="center"> 3.60 </td> </tr>
+  <tr> <td align="center"> 8 </td> <td align="center"> HURRICANE </td> <td align="center"> 12.10 </td> <td align="center"> 3.00 </td> </tr>
+  <tr> <td align="center"> 9 </td> <td align="center"> THUNDERSTORM WIND </td> <td align="center"> 8.91 </td> <td align="center"> 2.20 </td> </tr>
+  <tr> <td align="center"> 10 </td> <td align="center"> TROPICAL STORM </td> <td align="center"> 7.99 </td> <td align="center"> 2.00 </td> </tr>
    </table>
 
-Top 10 accumulate 91.8 % of total Harmful of all events. 
-Top 10 caused a total of 0 US $ in economic damages.
 
-Top 3 accumulate 66.3 % of total Harmful of all events. 
-Top 3 caused a total of  0 US $ in economic damages.
+> Top 10 accumulate 91.8 % of total Harmful of all events, causing a total of 365.224.100.680,00 US $ in economic damages.
 
-
-####Here's a detailed graph:
+> Top 3 accumulate 66.3 % of total Harmful of all events, causing a total of  263.575.292.750,00 US $ in economic damages.
 
 ![](PA2_files/figure-html/printPlotEconomicDamages-1.png) 
 
